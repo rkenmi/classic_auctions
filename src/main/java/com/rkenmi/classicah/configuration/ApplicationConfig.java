@@ -12,7 +12,6 @@ import org.springframework.context.annotation.Configuration;
 
 @Log4j2
 @Configuration
-//@EnableElastiCache(defaultExpiration = 5)
 public class ApplicationConfig {
     private ApplicationContext applicationContext;
 

@@ -15,7 +15,6 @@
  */
 package com.rkenmi.classicah;
 
-import com.rkenmi.classicah.service.ScanDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -25,15 +24,12 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class DatabaseLoader implements CommandLineRunner {
-	private final ScanDataService scanDataService;
 
 	@Autowired
-	public DatabaseLoader(ScanDataService scanDataService) {
-		this.scanDataService = scanDataService;
+	public DatabaseLoader() {
 	}
 
 	@Override
 	public void run(String... strings) throws Exception {
-	    scanDataService.getAuctionHouseItems();
 	}
 }
