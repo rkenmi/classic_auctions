@@ -3,8 +3,66 @@ table {
 }
 
 body {
-    background-color: #000;
+    background-color: #263238;
 }
+
+h1,h4 {
+    font-family: 'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
+    color: #fff;
+    text-shadow: -1px 1px 2px #555, 1px 1px 2px #555, 1px -1px 0 #555, -1px -1px 0 #555;
+    /*line-height: inherit;*/
+}
+
+.money-gold, .money-silver, .money-copper {
+    padding-right: 15px;
+    padding-left: 4px;
+    background: no-repeat right center;
+}
+
+.money-gold {
+    background-image: url("http://localhost:8080/images/money_gold.gif");
+}
+
+.money-silver {
+    background-image: url("http://localhost:8080/images/money_silver.gif");
+}
+
+.money-copper {
+    background-image: url("http://localhost:8080/images/money_copper.gif");
+}
+
+.pagination-item, .active {
+    width: 3em;
+    text-align: center;
+}
+
+.page-link {
+    height: 2.5em;
+    background-color: transparent;
+    color: #fff;
+    border: 0;
+}
+
+.disabled {
+    color: transparent;
+}
+
+.page-item.disabled .page-link {
+    background-color: transparent;
+    color: transparent;
+}
+
+.current a {
+    color: greenyellow;
+}
+
+.page-link:hover {
+    background-color: transparent;
+    color: greenyellow;
+}
+
+
+
 
 td, th {
     border: 1px solid #999;
