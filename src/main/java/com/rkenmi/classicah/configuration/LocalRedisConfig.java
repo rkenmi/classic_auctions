@@ -1,7 +1,5 @@
 package com.rkenmi.classicah.configuration;
 
-import io.lettuce.core.resource.ClientResources;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -11,20 +9,17 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
-import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.List;
 
-@Profile("default")
+@Profile("dev")
 @Configuration
 @EnableCaching
-public class RedisConfig {
+public class LocalRedisConfig {
 
     @Value("${redis.hostname}")
     private String redisHostName;
@@ -32,31 +27,13 @@ public class RedisConfig {
     @Value("${redis.port}")
     private int redisPort;
 
-    @Value("${redis.pw}")
-    private String redisPw;
-
     @Value("${redis.prefix}")
     private String redisPrefix;
 
-    private ClientResources clientResources;
-
-    @Autowired
-    public RedisConfig(ClientResources clientResources) {
-        this.clientResources = clientResources;
-    }
-
     @Bean
     LettuceConnectionFactory lettuceConnectionFactory() {
-        List<String> nodes = Collections.singletonList(redisHostName + ":" + redisPort);
-        RedisClusterConfiguration clusterConfiguration = new RedisClusterConfiguration(nodes);
-        LettuceClientConfiguration lettuceClientConfiguration = LettuceClientConfiguration.builder()
-                .clientResources(clientResources)
-                .useSsl()
-                .build();
-        clusterConfiguration.setPassword(redisPw);
-        LettuceConnectionFactory factory = new LettuceConnectionFactory(clusterConfiguration, lettuceClientConfiguration);
-        factory.afterPropertiesSet();
-        return factory;
+        RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration(redisHostName, redisPort);
+        return new LettuceConnectionFactory(redisStandaloneConfiguration);
     }
 
     @Bean(value = "redisTemplate")
@@ -79,3 +56,4 @@ public class RedisConfig {
                 .cacheDefaults(RedisCacheConfiguration.defaultCacheConfig().prefixKeysWith(redisPrefix).entryTtl(expiration)).build();
     }
 }
+
