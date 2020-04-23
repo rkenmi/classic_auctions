@@ -15,7 +15,6 @@
  */
 package com.rkenmi.classicah.controller;
 
-import com.rkenmi.classicah.service.ScanDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,11 +25,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
  */
 @Controller // <1>
 public class HomeController {
-	private ScanDataService scanDataService;
 
 	@Autowired
-    private HomeController(ScanDataService scanDataService) {
-    	this.scanDataService = scanDataService;
+    private HomeController() {
+
 	}
 
 	@RequestMapping(value = "/") // <2>
@@ -40,6 +38,6 @@ public class HomeController {
 
 	@GetMapping(value = "/search")
 	public String search() throws Exception {
-		return "search";
+		return "index";
 	}
 }

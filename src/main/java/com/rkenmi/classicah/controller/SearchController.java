@@ -37,7 +37,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +64,7 @@ public class SearchController {
 		SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
 		sourceBuilder.query(queryBuilder);
 		sourceBuilder.from(page * 15);  // each page has 15 results on the front-end
-		sourceBuilder.size(120);
+		sourceBuilder.size(90);
 		sourceBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
 
 		SearchRequest searchRequest = new SearchRequest();
