@@ -15,21 +15,27 @@
  */
 package com.rkenmi.classicah;
 
+import com.rkenmi.classicah.service.ScannerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**
  * @author Rick Miyamoto
  */
+@Profile("dev")
 @Component
 public class DatabaseLoader implements CommandLineRunner {
+	private ScannerService scannerService;
 
 	@Autowired
-	public DatabaseLoader() {
+	public DatabaseLoader(ScannerService scannerService) {
+		this.scannerService = scannerService;
 	}
 
 	@Override
-	public void run(String... strings) throws Exception {
+	public void run(String... strings) {
+		this.scannerService.refreshData();
 	}
 }
