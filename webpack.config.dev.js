@@ -1,15 +1,26 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-    mode: 'production',
+    mode: 'development',
     target: 'web',
     entry: [
-        './src/main/js/index.js'
+        './src/main/js/index.js',
+        './src/main/resources/static/main.css',
     ],
+    devtool: 'inline-source-map',
     cache: true,
+    devServer: {
+        port: 9000,
+        watchContentBase: true,
+        historyApiFallback: true,  // this is for fallback url for React Router
+        proxy: {
+            '/api': 'http://localhost:8080'
+        },
+        hot: true
+    },
     output: {
         path: __dirname,
-        publicPath: "./",
+        publicPath: "/",
         filename: 'target/classes/static/built/bundle.js'
     },
     plugins: [
