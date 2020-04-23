@@ -1,6 +1,22 @@
+import {TIME_REMAINING} from '../helpers/constants';
+
 const React = require('react');
 
 export default class Item extends React.Component{
+  renderMoney = (money) => {
+    return (
+      <td>
+        {money > 9999 ?
+          <span className={'money-gold'}>{Math.floor((money / 10000) % 100)}</span>
+          : null}
+        {money > 99 ?
+          <span className={'money-silver'}>{Math.floor((money / 100) % 100)}</span>
+          : null}
+        <span className={'money-copper'}>{Math.floor(money % 100)}</span>
+      </td>
+    )
+  };
+
   render() {
     const {rarity, id, itemLvl, itemName, minLvlRequired, bid, buyout, seller, timeRemaining} = this.props.features;
 
@@ -11,10 +27,10 @@ export default class Item extends React.Component{
         </td>
         <td>{itemLvl}</td>
         <td>{minLvlRequired}</td>
-        <td>{bid}</td>
-        <td>{buyout}</td>
+        {this.renderMoney(bid)}
+        {this.renderMoney(buyout)}
         <td>{seller}</td>
-        <td>{timeRemaining}</td>
+        <td>{TIME_REMAINING[timeRemaining-1]}</td>
       </tr>
     )
   }
