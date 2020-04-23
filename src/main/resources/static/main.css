@@ -20,15 +20,15 @@ h1,h4 {
 }
 
 .money-gold {
-    background-image: url("http://localhost:8080/images/money_gold.gif");
+    background-image: url("images/money_gold.gif");
 }
 
 .money-silver {
-    background-image: url("http://localhost:8080/images/money_silver.gif");
+    background-image: url("images/money_silver.gif");
 }
 
 .money-copper {
-    background-image: url("http://localhost:8080/images/money_copper.gif");
+    background-image: url("images/money_copper.gif");
 }
 
 .pagination-item, .active {

@@ -23,7 +23,7 @@ export default class Item extends React.Component{
     return (
       <tr>
         <td>
-          <a style={{color: '#' + rarity}} href={'https://classicdb.ch/?item=' + id} target={'_blank'} rel={'item=' + id}>{itemName}</a>
+          <a style={{color: '#' + rarity}} href={'https://classicdb.ch/?item=' + id} target={'_blank'} data-wowhead={'item=' + id + '&domain=classic'}>{itemName}</a>
         </td>
         <td>{itemLvl}</td>
         <td>{minLvlRequired}</td>

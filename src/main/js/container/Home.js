@@ -2,7 +2,6 @@
 import { hot } from 'react-hot-loader/root';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import ItemList from './ItemList';
 import {Button, Container, Form, FormControl, Row} from 'react-bootstrap';
 const React = require('react');
 
