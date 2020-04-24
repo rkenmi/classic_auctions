@@ -119,7 +119,7 @@ public class ScannerService {
         for (Item i : items) {
             Map<String, Object> map =
                     objectMapper.convertValue(i, new TypeReference<Map<String, Object>>() {});
-            bulkRequest.add(new IndexRequest("ah_item").source(map).type("item"));
+            bulkRequest.add(new IndexRequest("ah_item").source(map).type("_doc"));
         }
         BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
         bulkResponse.status();
