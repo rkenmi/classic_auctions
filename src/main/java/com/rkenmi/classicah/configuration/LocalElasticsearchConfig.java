@@ -18,14 +18,12 @@ import vc.inreach.aws.request.AWSSigningRequestInterceptor;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
-@Profile("default")
+@Profile("dev")
 @Configuration
-public class ElasticsearchConfig extends AbstractElasticsearchConfiguration {
+public class LocalElasticsearchConfig extends AbstractElasticsearchConfiguration {
 
     @Value("${elasticsearch.host}")
     private String elasticsearchHost;
-
-    private final String serviceName = "es";
 
     @Value("${cloud.aws.region.static}")
     private String region;
@@ -33,23 +31,12 @@ public class ElasticsearchConfig extends AbstractElasticsearchConfiguration {
     @Value("${elasticsearch.port}")
     private Integer port;
 
-    private final AWSCredentialsProvider credentialsProvider;
-
-    @Autowired
-    public ElasticsearchConfig(AWSCredentialsProvider awsCredentialsProvider) {
-        this.credentialsProvider = awsCredentialsProvider;
-    }
-
     @Override
     @Bean
     public RestHighLevelClient elasticsearchClient() {
-        final Supplier<LocalDateTime> clock = () -> LocalDateTime.now(ZoneOffset.UTC);
-        AWSSigner signer = new AWSSigner(credentialsProvider, region, serviceName, clock);
-        HttpRequestInterceptor interceptor = new AWSSigningRequestInterceptor(signer);
-        RestHighLevelClient restHighLevelClient = new RestHighLevelClient(RestClient.builder(HttpHost.create(elasticsearchHost))
-                .setHttpClientConfigCallback(hacb -> hacb.addInterceptorLast(interceptor)));
+        return new RestHighLevelClient(
+                RestClient.builder(new HttpHost(elasticsearchHost, port, "http")));
 
-        return restHighLevelClient;
     }
 
 
