@@ -15,23 +15,23 @@
  */
 package com.rkenmi.classicah.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
  * @author Rick Miyamoto
  */
-@Controller // <1>
-public class HomeController {
+@Controller
+public class FallbackController implements ErrorController {
 
-	@Autowired
-    private HomeController() {
-
-	}
-
-	@RequestMapping(value = {"/", "/search"})
+	@RequestMapping("/error")
 	public String index() {
 		return "index";
+	}
+
+	@Override
+	public String getErrorPath() {
+		return "/error";
 	}
 }

@@ -5,14 +5,17 @@ const ReactDOM = require('react-dom');
 import { BrowserRouter as Router, Route , Switch} from 'react-router-dom'
 import Home from './container/Home';
 import Search from './container/Search';
+import Error from './container/Error';
 
 const store = configureStore();
 ReactDOM.render(
   <Provider store={store}>
       <Router>
         <Switch>
-          <Route path="/search" component={Search} />
-          <Route path="/" component={Home} />
+          <Route path="/search" exact component={Search} />
+          <Route path="/" exact component={Home} />
+          {/*Fallback route*/}
+          <Route component={Error} />
         </Switch>
       </Router>
   </Provider>,
