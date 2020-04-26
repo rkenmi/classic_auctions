@@ -1,26 +1,25 @@
 import {useMediaQuery} from 'react-responsive';
 
 const React = require('react');
-import {Button, Col, Container, Form, FormControl, Nav, Navbar, Pagination, Row, Table} from 'react-bootstrap';
+import {
+  Button,
+  Col,
+  Container,
+  Form,
+  FormControl,
+  InputGroup,
+  Nav,
+  Navbar,
+  Pagination,
+  Row,
+  Table
+} from 'react-bootstrap';
 import Item from './Item';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 const client = require('../client');
 const qs = require('qs');
 import {faSearch} from '@fortawesome/free-solid-svg-icons';
-
-const Desktop = ({ children }) => {
-  const isDesktop = useMediaQuery({ minWidth: 992 });
-  return isDesktop ? children : null
-};
-
-const Tablet = ({ children }) => {
-  const isTablet = useMediaQuery({ minWidth: 768, maxWidth: 991 });
-  return isTablet ? children : null
-};
-const Mobile = ({ children }) => {
-  const isMobile = useMediaQuery({ maxWidth: 767 });
-  return isMobile ? children : null
-};
+import {Desktop, Mobile, Tablet} from '../helpers/mediaTypes';
 
 export default class ItemList extends React.Component{
   constructor(props) {
@@ -120,16 +119,20 @@ export default class ItemList extends React.Component{
 
   renderMobileView() {
     return (
-      <Container style={{paddingBottom: 50, paddingTop: 50}}>
-        <Row style={{flex: 1, justifyContent: 'center'}}>
+      <Container style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingBottom: 25, paddingTop: 25}}>
+        <Row>
           <h1>Classic Auctions</h1>
         </Row>
-        <Row style={{flex: 1, justifyContent: 'center'}}>
+        <Row>
           <Form inline onSubmit={(e) => {e.preventDefault(); this.onSearch()}}>
-            <FormControl type="text" placeholder="Search" onChange={this.handleChange}/>
-            <Button style={{marginLeft: -1}} onClick={() => this.onSearch()}>
-              <FontAwesomeIcon icon={faSearch} inverse/>
-            </Button>
+            <InputGroup className='mb-3'>
+              <FormControl type="text" placeholder="Search" className="mr-sm-2" onChange={this.handleChange}/>
+              <InputGroup.Append>
+                <Button style={{marginLeft: -6}} onClick={() => this.onSearch()}>
+                  <FontAwesomeIcon icon={faSearch} inverse/>
+                </Button>
+              </InputGroup.Append>
+            </InputGroup>
           </Form>
         </Row>
       </Container>
@@ -142,11 +145,11 @@ export default class ItemList extends React.Component{
       <Item key={this.state.items.indexOf(features)} features={features}/>
     );
     return (
-      <Container style={{minWidth: 550, borderRadius: 15, border: '1px solid gray', backgroundColor: '#343a40'}}>
+      <Container style={{display: 'flex', flexDirection: 'column', borderRadius: 15, border: '1px solid gray', backgroundColor: '#343a40'}}>
         <Desktop>{this.renderDesktopView()}</Desktop>
         <Tablet>{this.renderMobileView()}</Tablet>
         <Mobile>{this.renderMobileView()}</Mobile>
-        <Table striped bordered hover size="sm" variant={"dark"}>
+        <Table responsive striped bordered hover size="xs" variant={"dark"}>
           <tbody>
           <tr>
             <th>Item Name</th>

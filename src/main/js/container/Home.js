@@ -2,7 +2,7 @@
 import { hot } from 'react-hot-loader/root';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import {Button, Container, Form, FormControl, Row} from 'react-bootstrap';
+import {Button, Container, Form, FormControl, Navbar, Row} from 'react-bootstrap';
 const React = require('react');
 
 class Home extends React.Component {
@@ -20,17 +20,18 @@ class Home extends React.Component {
 		let query = event.target.value;
 		this.setState({query});
 	};
+
 	render() {
 		return (
-			<Container style={{marginTop: '10%'}}>
-        <Row style={{display: 'flex', justifyContent: 'center'}}>
+			<Container style={{marginTop: 80, display: 'flex', flexDirection: 'column', alignItems: 'space-around'}}>
+				<Row style={{marginBottom: 20, justifyContent: 'center'}}>
 					<h1>{'Classic Auctions'}</h1>
 				</Row>
-				<Container style={{display: 'flex', width: '50%', justifyContent: 'center'}}>
-					<Form style={{marginTop: '5%', width: '500px'}} onSubmit={(e) => {e.preventDefault(); this.onSearch()}}>
-						<FormControl type="text" placeholder="Search" className="mb-3" onChange={this.handleChange}/>
+				<Row style={{marginBottom: 20, justifyContent: 'center'}}>
+					<Form style={{width: 250}} onSubmit={(e) => {e.preventDefault(); this.onSearch()}}>
+						<FormControl type="text" placeholder="Search" onChange={this.handleChange}/>
 					</Form>
-				</Container>
+				</Row>
 			</Container>
 		)
 	}
