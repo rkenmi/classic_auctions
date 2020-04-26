@@ -4,6 +4,11 @@ const React = require('react');
 
 export default class Item extends React.Component{
   renderMoney = (money) => {
+    // For items with no buyout price
+    if (money === '0') {
+      return <td/>;
+    }
+
     return (
       <td>
         {money > 9999 ?

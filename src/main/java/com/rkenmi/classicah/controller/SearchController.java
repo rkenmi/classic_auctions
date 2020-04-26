@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,6 +60,7 @@ public class SearchController {
     @Cacheable(value="popularQueries", key="{#query + #page}")
 	@GetMapping(value = "/api/search")
     public Map<String, Object> searchData(@RequestParam("q") String query, @RequestParam(name = "p", defaultValue = "0") Integer page) {
+		Instant startQueryTime = Instant.now();
 		QueryBuilder queryBuilder = QueryBuilders.prefixQuery("itemName", query.toLowerCase());
 
 		SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
@@ -86,6 +88,8 @@ public class SearchController {
 			return Collections.emptyMap();
 		}
 
-		return ImmutableMap.of("items", items, "page", page);
+		Instant endQueryTime = Instant.now();
+		Long queryMs = endQueryTime.toEpochMilli() - startQueryTime.toEpochMilli();
+		return ImmutableMap.of("items", items, "page", page, "queryMs", queryMs);
 	}
 }

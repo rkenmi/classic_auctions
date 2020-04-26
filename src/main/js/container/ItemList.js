@@ -42,8 +42,8 @@ export default class ItemList extends React.Component{
   performSearch = (pageNum=0) => {
     this.props.history.push('/search?q=' + this.state.query + '&p=' + pageNum);
     client({method: 'GET', path: '/api/search?q=' + this.state.query + '&p=' + pageNum}).done(response => {
-      const {items, page} = response.entity;
-      this.setState({items, page});
+      const {items, page, queryMs} = response.entity;
+      this.setState({items, page, queryMs});
     });
   };
 
@@ -139,6 +139,23 @@ export default class ItemList extends React.Component{
     );
   }
 
+  renderFooter() {
+    if (!this.state.items || this.state.items.length === 0) {
+      return;
+    }
+    const dataLastUpdated = new Date(this.state.items[0].timestamp).toString();
+
+    return (
+      <div>
+        {this.renderPagination()}
+        <Container style={{display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBottom: 25}}>
+          <div style={{color: '#fff', fontSize: 10}}>Last data refresh: {dataLastUpdated}</div>
+          <div style={{color: '#fff', fontSize: 10}}>Query response time: {this.state.queryMs} ms</div>
+        </Container>
+      </div>
+    )
+  }
+
   render() {
     const {page} = this.state;
     const items = this.state.items.map(features =>
@@ -163,7 +180,7 @@ export default class ItemList extends React.Component{
           {items.slice(0, 15)}
           </tbody>
         </Table>
-        {this.renderPagination()}
+        {items.length > 0 ? this.renderFooter() : null}
       </Container>
     )
   }
