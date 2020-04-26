@@ -1,9 +1,26 @@
+import {useMediaQuery} from 'react-responsive';
 
 const React = require('react');
-import {Button, Container, Form, FormControl, Nav, Navbar, Pagination, Table} from 'react-bootstrap';
+import {Button, Col, Container, Form, FormControl, Nav, Navbar, Pagination, Row, Table} from 'react-bootstrap';
 import Item from './Item';
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 const client = require('../client');
 const qs = require('qs');
+import {faSearch} from '@fortawesome/free-solid-svg-icons';
+
+const Desktop = ({ children }) => {
+  const isDesktop = useMediaQuery({ minWidth: 992 });
+  return isDesktop ? children : null
+};
+
+const Tablet = ({ children }) => {
+  const isTablet = useMediaQuery({ minWidth: 768, maxWidth: 991 });
+  return isTablet ? children : null
+};
+const Mobile = ({ children }) => {
+  const isMobile = useMediaQuery({ maxWidth: 767 });
+  return isMobile ? children : null
+};
 
 export default class ItemList extends React.Component{
   constructor(props) {
@@ -87,22 +104,48 @@ export default class ItemList extends React.Component{
     )
   };
 
+  renderDesktopView() {
+    return (
+      <Navbar bg="dark" variant="dark">
+        <Navbar.Brand href="/"><h1>Classic Auctions</h1></Navbar.Brand>
+        <Nav className="mr-auto">
+        </Nav>
+        <Form inline onSubmit={(e) => {e.preventDefault(); this.onSearch()}}>
+          <FormControl type="text" placeholder="Search" className="mr-sm-2" onChange={this.handleChange}/>
+          <Button variant="outline-info" onClick={() => this.onSearch()}>Search</Button>
+        </Form>
+      </Navbar>
+    );
+  }
+
+  renderMobileView() {
+    return (
+      <Container style={{paddingBottom: 50, paddingTop: 50}}>
+        <Row style={{flex: 1, justifyContent: 'center'}}>
+          <h1>Classic Auctions</h1>
+        </Row>
+        <Row style={{flex: 1, justifyContent: 'center'}}>
+          <Form inline onSubmit={(e) => {e.preventDefault(); this.onSearch()}}>
+            <FormControl type="text" placeholder="Search" onChange={this.handleChange}/>
+            <Button style={{marginLeft: -1}} onClick={() => this.onSearch()}>
+              <FontAwesomeIcon icon={faSearch} inverse/>
+            </Button>
+          </Form>
+        </Row>
+      </Container>
+    );
+  }
+
   render() {
     const {page} = this.state;
     const items = this.state.items.map(features =>
       <Item key={this.state.items.indexOf(features)} features={features}/>
     );
     return (
-      <Container style={{borderRadius: '15px', border: '1px solid gray', backgroundColor: '#343a40'}}>
-        <Navbar bg="dark" variant="dark">
-          <Navbar.Brand href="/"><h1>Classic Auctions</h1></Navbar.Brand>
-          <Nav className="mr-auto">
-          </Nav>
-          <Form inline onSubmit={(e) => {e.preventDefault(); this.onSearch()}}>
-            <FormControl type="text" placeholder="Search" className="mr-sm-2" onChange={this.handleChange}/>
-            <Button variant="outline-info" onClick={() => this.onSearch()}>Search</Button>
-          </Form>
-        </Navbar>
+      <Container style={{minWidth: 550, borderRadius: 15, border: '1px solid gray', backgroundColor: '#343a40'}}>
+        <Desktop>{this.renderDesktopView()}</Desktop>
+        <Tablet>{this.renderMobileView()}</Tablet>
+        <Mobile>{this.renderMobileView()}</Mobile>
         <Table striped bordered hover size="sm" variant={"dark"}>
           <tbody>
           <tr>
