@@ -12,7 +12,7 @@ export default class Item extends React.Component{
     return (
       <td>
         {money > 9999 ?
-          <span className={'money-gold'}>{Math.floor((money / 10000) % 100)}</span>
+          <span className={'money-gold'}>{Math.floor((money / 10000))}</span>
           : null}
         {money > 99 ?
           <span className={'money-silver'}>{Math.floor((money / 100) % 100)}</span>
