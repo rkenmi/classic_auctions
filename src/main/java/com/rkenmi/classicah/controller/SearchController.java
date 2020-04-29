@@ -61,7 +61,7 @@ public class SearchController {
 	@GetMapping(value = "/api/search")
     public Map<String, Object> searchData(@RequestParam("q") String query, @RequestParam(name = "p", defaultValue = "0") Integer page) {
 		Instant startQueryTime = Instant.now();
-		QueryBuilder queryBuilder = QueryBuilders.prefixQuery("itemName", query.toLowerCase());
+		QueryBuilder queryBuilder = QueryBuilders.matchPhrasePrefixQuery("itemName", query.toLowerCase());
 
 		SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
 		sourceBuilder.query(queryBuilder);
