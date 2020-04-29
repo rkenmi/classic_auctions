@@ -105,7 +105,7 @@ export default class ItemList extends React.Component{
 
   renderDesktopView() {
     return (
-      <Navbar bg="dark" variant="dark">
+      <Navbar variant="dark">
         <Navbar.Brand href="/"><h1>Classic Auctions</h1></Navbar.Brand>
         <Nav className="mr-auto">
         </Nav>
@@ -162,7 +162,7 @@ export default class ItemList extends React.Component{
       <Item key={this.state.items.indexOf(features)} features={features}/>
     );
     return (
-      <Container style={{display: 'flex', flexDirection: 'column', borderRadius: 15, border: '1px solid gray', backgroundColor: '#343a40'}}>
+      <Container style={{display: 'flex', flexDirection: 'column'}}>
         <Desktop>{this.renderDesktopView()}</Desktop>
         <Tablet>{this.renderMobileView()}</Tablet>
         <Mobile>{this.renderMobileView()}</Mobile>
@@ -172,7 +172,7 @@ export default class ItemList extends React.Component{
             <th>Qty</th>
             <th>Name</th>
             <th>iLvl</th>
-            <th>Req</th>
+            <th>Repro</th>
             <th>Bid</th>
             <th>Buyout</th>
             <th>Seller</th>
