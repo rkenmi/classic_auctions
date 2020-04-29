@@ -88,7 +88,7 @@ public class ScannerService {
 
             while (itemMatcher.find()) {
                 String itemLua = itemMatcher.group();
-                String itemFeaturesRegex = "\\{\\\\\"\\|cff([a-zA-Z0-9]+)\\|Hitem:([0-9]+)[:0-9]+\\|h\\[([a-zA-Z\\:\\'\\\"\\s]+)\\]\\|h\\|r\\\\\\\",([0-9]+|nil),[0-9]+,[0-9]+,nil,([0-9]+),([1234]),[0-9]+,\\\\\"[a-zA-Z\\:\\'\\\"\\s]+\\\\\",(?:[0-9]+|nil),[0-9]+,[0-9]+,(?:false|true),([0-9]+),[0-9]+,[0-9]+,([0-9]+),[0-9]+,(?:true|false),\\\\\"([a-zA-Z]*)\\\\\",[0-9]+,\\\\\"([a-zA-Z]*)\\\\\",[0-9]+,[0-9]+,[0-9]+,[0-9]+,[0-9]+,\\}";
+                String itemFeaturesRegex = "\\{\\\\\"\\|cff([a-zA-Z0-9]+)\\|Hitem:([0-9]+)[:0-9]+\\|h\\[([a-zA-Z\\:\\'\\\"\\s]+)\\]\\|h\\|r\\\\\\\",([0-9]+|nil),[0-9]+,[0-9]+,nil,([0-9]+),([1234]),[0-9]+,\\\\\"[a-zA-Z\\:\\'\\\"\\s]+\\\\\",(?:[0-9]+|nil),([0-9]+),[0-9]+,(?:false|true),([0-9]+),[0-9]+,[0-9]+,([0-9]+),[0-9]+,(?:true|false),\\\\\"([a-zA-Z]*)\\\\\",[0-9]+,\\\\\"([a-zA-Z]*)\\\\\",[0-9]+,[0-9]+,[0-9]+,[0-9]+,[0-9]+,\\}";
                 Matcher itemFeatureMatcher = Pattern.compile(itemFeaturesRegex).matcher(itemLua);
                 if (itemFeatureMatcher.find()) {
                     Item item = Item.builder()
@@ -98,9 +98,10 @@ public class ScannerService {
                             .itemLvl(Integer.parseInt(itemFeatureMatcher.group(4)))
                             .bid(itemFeatureMatcher.group(5))
                             .timeRemaining(Integer.parseInt(itemFeatureMatcher.group(6)))
-                            .minLvlRequired(Integer.parseInt(itemFeatureMatcher.group(7)))
-                            .buyout(itemFeatureMatcher.group(8))
-                            .seller(itemFeatureMatcher.group(9))
+                            .quantity(Integer.parseInt(itemFeatureMatcher.group(7)))
+                            .minLvlRequired(Integer.parseInt(itemFeatureMatcher.group(8)))
+                            .buyout(itemFeatureMatcher.group(9))
+                            .seller(itemFeatureMatcher.group(10))
                             .timestamp(s3Object.getObjectMetadata().getLastModified())
                             .build();
                     items.add(item);

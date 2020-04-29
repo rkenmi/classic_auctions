@@ -24,5 +24,6 @@ public class Item implements Serializable {
     private String buyout;
     private String seller;
     private Integer timeRemaining;
+    private Integer quantity;
     private Date timestamp;
 }

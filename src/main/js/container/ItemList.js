@@ -169,13 +169,14 @@ export default class ItemList extends React.Component{
         <Table responsive striped bordered hover size="xs" variant={"dark"}>
           <tbody>
           <tr>
-            <th>Item Name</th>
-            <th>Item Lvl</th>
+            <th>Qty</th>
+            <th>Name</th>
+            <th>iLvl</th>
             <th>Req</th>
             <th>Bid</th>
             <th>Buyout</th>
             <th>Seller</th>
-            <th>Time Remaining</th>
+            <th>Time Left</th>
           </tr>
           {items.slice(0, 15)}
           </tbody>
