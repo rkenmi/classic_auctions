@@ -7,10 +7,19 @@ body {
 }
 
 h1,h4 {
+    margin-bottom: 0;
     font-family: 'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
     color: #fff;
     text-shadow: -1px 1px 2px #555, 1px 1px 2px #555, 1px -1px 0 #555, -1px -1px 0 #555;
     /*line-height: inherit;*/
+}
+
+.alliance {
+    background-image: url("images/alliance_50.png");
+}
+
+.horde {
+    background-image: url("images/horde_50.png");
 }
 
 .money-gold, .money-silver, .money-copper {

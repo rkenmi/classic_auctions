@@ -38,6 +38,8 @@ public class ScannerService {
     @Value("${app.awsServices.bucketName}")
     private String s3Bucket;
 
+    private static final String INDEX = "ah_item_bigglesworth_horde";
+
     @Autowired
     public ScannerService(AmazonS3 amazonS3, RestHighLevelClient client) {
         this.amazonS3 = amazonS3;
@@ -47,9 +49,9 @@ public class ScannerService {
     public void refreshData() {
         log.info("Wiping the local index");
         try {
-            boolean indexExists = client.indices().exists(new GetIndexRequest("ah_item"), RequestOptions.DEFAULT);
+            boolean indexExists = client.indices().exists(new GetIndexRequest(INDEX), RequestOptions.DEFAULT);
             if (indexExists) {
-                client.indices().delete(new DeleteIndexRequest("ah_item"), RequestOptions.DEFAULT);
+                client.indices().delete(new DeleteIndexRequest(INDEX), RequestOptions.DEFAULT);
             }
 
             storeS3DataIntoLocalElasticsearch();
@@ -120,7 +122,7 @@ public class ScannerService {
         for (Item i : items) {
             Map<String, Object> map =
                     objectMapper.convertValue(i, new TypeReference<Map<String, Object>>() {});
-            bulkRequest.add(new IndexRequest("ah_item").source(map).type("_doc"));
+            bulkRequest.add(new IndexRequest(INDEX).source(map).type("_doc"));
         }
         BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
         bulkResponse.status();

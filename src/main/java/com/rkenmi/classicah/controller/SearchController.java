@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.rkenmi.classicah.document.Item;
 import lombok.extern.log4j.Log4j2;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -26,6 +27,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +45,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static com.rkenmi.classicah.data.SupportedRealms.US_WEST;
+
 /**
  * @author Rick Miyamoto
  */
@@ -57,9 +61,14 @@ public class SearchController {
     	this.client = client;
 	}
 
-    @Cacheable(value="popularQueries", key="{#query + #page}")
+    @Cacheable(value="popularQueries", key="{#query + #page + #realm + #faction}")
 	@GetMapping(value = "/api/search")
-    public Map<String, Object> searchData(@RequestParam("q") String query, @RequestParam(name = "p", defaultValue = "0") Integer page) {
+    public Map<String, Object> searchData(
+    		@RequestParam("q") String query,
+			@RequestParam(name = "p", defaultValue = "0") Integer page,
+			@RequestParam(name = "realm") String realm,
+			@RequestParam(name = "faction") String faction
+	) {
 		Instant startQueryTime = Instant.now();
 		QueryBuilder queryBuilder = QueryBuilders.matchPhrasePrefixQuery("itemName", query.toLowerCase());
 
@@ -70,10 +79,11 @@ public class SearchController {
 		sourceBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
 
 		SearchRequest searchRequest = new SearchRequest();
-		searchRequest.indices("ah_item");
+		searchRequest.indices(String.format("ah_item_%s_%s", realm.toLowerCase(), faction.toLowerCase()));
 		searchRequest.source(sourceBuilder);
 
 		List<Item> items = new ArrayList<>();
+		Long queryMs;
 		try {
 			SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
 			log.debug("Status of search: {}", searchResponse.status());
@@ -83,13 +93,22 @@ public class SearchController {
 						.forEach(hit -> items.add(objectMapper.convertValue(hit.getSourceAsMap(), Item.class)));
 			}
 			log.info("Returning {} search hits", searchHits.length);
+		} catch (ElasticsearchStatusException e) {
+			if (e.status().equals(RestStatus.NOT_FOUND)) {
+				log.error("Index not found!");
+			}
 		} catch (IOException e) {
 			log.error("Error with search request: ", e);
-			return Collections.emptyMap();
+		} finally {
+			Instant endQueryTime = Instant.now();
+			queryMs = endQueryTime.toEpochMilli() - startQueryTime.toEpochMilli();
 		}
 
-		Instant endQueryTime = Instant.now();
-		Long queryMs = endQueryTime.toEpochMilli() - startQueryTime.toEpochMilli();
 		return ImmutableMap.of("items", items, "page", page, "queryMs", queryMs);
+	}
+
+	@GetMapping(value = "/api/getRealms")
+	public List<String> getRealms() {
+	    return US_WEST;
 	}
 }
