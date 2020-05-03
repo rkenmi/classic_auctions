@@ -11,8 +11,8 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
-import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -32,8 +32,8 @@ public class RedisConfig {
     @Value("${redis.port}")
     private int redisPort;
 
-    @Value("${redis.pw}")
-    private String redisPw;
+//    @Value("${redis.pw}")
+//    private String redisPw;
 
     @Value("${redis.prefix}")
     private String redisPrefix;
@@ -47,14 +47,13 @@ public class RedisConfig {
 
     @Bean
     LettuceConnectionFactory lettuceConnectionFactory() {
-        List<String> nodes = Collections.singletonList(redisHostName + ":" + redisPort);
-        RedisClusterConfiguration clusterConfiguration = new RedisClusterConfiguration(nodes);
+        RedisStandaloneConfiguration standaloneConfiguration = new RedisStandaloneConfiguration();
+        standaloneConfiguration.setHostName(redisHostName);
+        standaloneConfiguration.setPort(redisPort);
         LettuceClientConfiguration lettuceClientConfiguration = LettuceClientConfiguration.builder()
                 .clientResources(clientResources)
-                .useSsl()
                 .build();
-        clusterConfiguration.setPassword(redisPw);
-        LettuceConnectionFactory factory = new LettuceConnectionFactory(clusterConfiguration, lettuceClientConfiguration);
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(standaloneConfiguration, lettuceClientConfiguration);
         factory.afterPropertiesSet();
         return factory;
     }
