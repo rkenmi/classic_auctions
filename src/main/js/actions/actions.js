@@ -2,7 +2,9 @@
  * action types
  */
 
-export const ADD_TODO = 'ADD_TODO'
+export const SET_REALMS = 'SET_REALMS';
+export const SET_CURRENT_REALM = 'SET_CURRENT_REALM';
+export const SET_ERROR = 'SET_ERROR';
 export const TOGGLE_TODO = 'TOGGLE_TODO'
 export const SET_VISIBILITY_FILTER = 'SET_VISIBILITY_FILTER'
 
@@ -20,8 +22,16 @@ export const VisibilityFilters = {
  * action creators
  */
 
-export function addTodo(text) {
-  return { type: ADD_TODO, text }
+export function setRealms(realms) {
+  return { type: SET_REALMS, realms }
+}
+
+export function setCurrentRealm(currentRealm) {
+  return { type: SET_CURRENT_REALM, currentRealm }
+}
+
+export function setError(title, message) {
+  return { type: SET_ERROR, title, message }
 }
 
 export function toggleTodo(index) {

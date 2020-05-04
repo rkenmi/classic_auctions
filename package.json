@@ -28,7 +28,8 @@
   },
   "scripts": {
     "watch": "webpack --watch -d",
-    "build": "webpack",
+    "build": "webpack -p",
+    "build-dev": "webpack",
     "dev": "webpack-dev-server --inline --hot  --config webpack.config.dev.js"
   },
   "devDependencies": {
@@ -53,7 +54,6 @@
     "redux-devtools-extension": "^2.13.8",
     "redux-thunk": "^2.3.0",
     "style-loader": "^1.1.4",
-    "url-loader": "^4.1.0",
     "webpack": "^4.19.1",
     "webpack-cli": "^3.1.0",
     "webpack-dev-server": "^3.10.3"
