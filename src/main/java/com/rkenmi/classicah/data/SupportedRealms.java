@@ -12,6 +12,11 @@ public class SupportedRealms {
             "Azuresong",
             "Kurinnaxx",
             "Old Blanchy",
-            "Smolderweb"
+            "Smolderweb",
+            "Thunderfury",
+            "Rattlegore",
+            "Myzrael",
+            "Atiesh",
+            "Blaumeux"
     );
 }
