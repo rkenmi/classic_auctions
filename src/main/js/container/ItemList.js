@@ -178,10 +178,10 @@ class ItemList extends React.Component{
         <Navbar fixed={'top'} style={{display: 'flex'}} bg={'dark'} variant={'dark'} expand={'lg'}
                 onToggle={()=> {this.setState({mobileNavExpanded: !this.state.mobileNavExpanded})} }
                 expanded={this.state.mobileNavExpanded}>
-          <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Brand>
             <h4>Classic Auctions</h4>
           </Navbar.Brand>
+          <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse style={{justifyContent: 'center', marginTop: 25}} id="basic-navbar-nav">
             <Form inline onSubmit={this.onMobileSearch}>
               <InputGroup style={{flex: 1}}>
@@ -216,13 +216,35 @@ class ItemList extends React.Component{
     if (!this.state.items || this.state.items.length === 0) {
       return;
     }
-    const dataLastUpdated = new Date(this.state.items[0].timestamp).toString();
+    const dataLastUpdated = new Date(this.state.items[0].timestamp);
+    let d = dataLastUpdated.getDay();
+    let m = dataLastUpdated.getMinutes();
+    let s = dataLastUpdated.getSeconds();
+
+    const dateNow = new Date();
+    let cd = dateNow.getDay();
+    let cm = dateNow.getMinutes();
+    let cs = dateNow.getSeconds();
+
+    let dateArray = [], dayStr, monthStr, yearStr;
+
+    if (cd - d > 0) {
+      dateArray.push((cd - d) + ' days');
+    }
+    if (cm - m > 0) {
+      dateArray.push((cm - m) + ' minutes');
+    }
+    if (cs - s > 0) {
+      dateArray.push((cs - s) + ' seconds');
+    }
+
+    const dateStr = dateArray.join() + ' ago';
 
     return (
       <div>
         {this.renderPagination()}
         <Container style={{display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBottom: 25}}>
-          <div style={{color: '#fff', fontSize: 10}}>Last data refresh: {dataLastUpdated}</div>
+          <div style={{color: '#fff', fontSize: 10}}>Last data refresh: {dateStr}</div>
           <div style={{color: '#fff', fontSize: 10}}>Query response time: {this.state.queryMs} ms</div>
         </Container>
       </div>
