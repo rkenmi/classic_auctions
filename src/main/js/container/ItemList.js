@@ -216,29 +216,7 @@ class ItemList extends React.Component{
     if (!this.state.items || this.state.items.length === 0) {
       return;
     }
-    const dataLastUpdated = new Date(this.state.items[0].timestamp);
-    let d = dataLastUpdated.getDay();
-    let m = dataLastUpdated.getMinutes();
-    let s = dataLastUpdated.getSeconds();
-
-    const dateNow = new Date();
-    let cd = dateNow.getDay();
-    let cm = dateNow.getMinutes();
-    let cs = dateNow.getSeconds();
-
-    let dateArray = [], dayStr, monthStr, yearStr;
-
-    if (cd - d > 0) {
-      dateArray.push((cd - d) + ' days');
-    }
-    if (cm - m > 0) {
-      dateArray.push((cm - m) + ' minutes');
-    }
-    if (cs - s > 0) {
-      dateArray.push((cs - s) + ' seconds');
-    }
-
-    const dateStr = dateArray.join() + ' ago';
+    const dateStr = new Date(this.state.items[0].timestamp).toString();
 
     return (
       <div>
