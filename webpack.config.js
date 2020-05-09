@@ -4,7 +4,8 @@ module.exports = {
     mode: 'production',
     target: 'web',
     entry: [
-        './src/main/js/index.js'
+        './src/main/js/index.js',
+        './src/main/resources/static/main.css'
     ],
     cache: true,
     output: {

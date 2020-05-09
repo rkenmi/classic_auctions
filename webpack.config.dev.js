@@ -5,7 +5,7 @@ module.exports = {
     target: 'web',
     entry: [
         './src/main/js/index.js',
-        './src/main/resources/static/main.css',
+        './src/main/resources/static/main.css'
     ],
     devtool: 'inline-source-map',
     cache: true,
