@@ -14,6 +14,12 @@ h1,h4 {
     /*line-height: inherit;*/
 }
 
+@media (min-width: 576px) {
+    .form-inline .form-control {
+        width: 100%;
+    }
+}
+
 .alliance {
     background-image: url("images/alliance_50.png");
 }
