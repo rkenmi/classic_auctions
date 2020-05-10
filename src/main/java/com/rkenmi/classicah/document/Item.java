@@ -26,4 +26,5 @@ public class Item implements Serializable {
     private Integer timeRemaining;
     private Integer quantity;
     private Date timestamp;
+    private String suggest;
 }

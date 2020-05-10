@@ -4,6 +4,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.rkenmi.classicah.document.Item;
 import lombok.extern.log4j.Log4j2;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -12,6 +13,7 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +24,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -105,6 +108,7 @@ public class ScannerService {
                             .buyout(itemFeatureMatcher.group(9))
                             .seller(itemFeatureMatcher.group(10))
                             .timestamp(s3Object.getObjectMetadata().getLastModified())
+                            .suggest(itemFeatureMatcher.group(3))
                             .build();
                     items.add(item);
                     log.info("Retrieved item {}", item);
@@ -117,11 +121,21 @@ public class ScannerService {
         return items;
     }
 
+    public CreateIndexRequest createIndexRequest() {
+        CreateIndexRequest createIndexRequest = new CreateIndexRequest(INDEX);
+        Map<String, Object> jsonMap = new HashMap<>();
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("suggest", ImmutableMap.of("type", "completion"));
+        jsonMap.put("properties", properties);
+        return createIndexRequest.mapping(jsonMap);
+    }
+
     public void createDocuments(List<Item> items) throws IOException {
+        client.indices().create(createIndexRequest(), RequestOptions.DEFAULT);
         BulkRequest bulkRequest = new BulkRequest();
         for (Item i : items) {
-            Map<String, Object> map =
-                    objectMapper.convertValue(i, new TypeReference<Map<String, Object>>() {});
+            HashMap<String, Object> map =
+                    new HashMap<>(objectMapper.convertValue(i, new TypeReference<Map<String, Object>>() {}));
             bulkRequest.add(new IndexRequest(INDEX).source(map).type("_doc"));
         }
         BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);

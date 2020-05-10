@@ -30,6 +30,11 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.suggest.Suggest;
+import org.elasticsearch.search.suggest.SuggestBuilder;
+import org.elasticsearch.search.suggest.SuggestBuilders;
+import org.elasticsearch.search.suggest.SuggestionBuilder;
+import org.elasticsearch.search.suggest.completion.CompletionSuggestion;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -59,6 +64,49 @@ public class SearchController {
 	@Autowired
     public SearchController(RestHighLevelClient client) {
     	this.client = client;
+	}
+
+	@Cacheable(value="autoComplete", key="{#query + #realm + #faction}")
+	@GetMapping(value = "/api/autocomplete")
+	public List<String> searchSuggestions(
+			@RequestParam("q") String query,
+			@RequestParam(name = "realm") String realm,
+			@RequestParam(name = "faction") String faction
+	) {
+		SuggestionBuilder suggestionBuilder = SuggestBuilders
+				.completionSuggestion("suggest")
+				.prefix(query)
+				.skipDuplicates(true)
+				.size(5);
+
+		SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+		sourceBuilder.suggest(new SuggestBuilder().addSuggestion("item-suggest", suggestionBuilder));
+
+		SearchRequest searchRequest = new SearchRequest();
+		searchRequest.indices(String.format("ah_item_%s_%s", realm.toLowerCase(), faction.toLowerCase()));
+		searchRequest.source(sourceBuilder);
+
+		List<String> suggestions = new ArrayList<>();
+
+		try {
+			SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+			Suggest suggest = searchResponse.getSuggest();
+			CompletionSuggestion completionSuggestion = suggest.getSuggestion("item-suggest");
+			for (CompletionSuggestion.Entry entry : completionSuggestion.getEntries()) {
+				for (CompletionSuggestion.Entry.Option option : entry) {
+					String suggestText = option.getText().string();
+					suggestions.add(suggestText);
+				}
+			}
+		} catch (ElasticsearchStatusException e) {
+			if (e.status().equals(RestStatus.NOT_FOUND)) {
+				log.error("Index not found!");
+			}
+		} catch (IOException e) {
+			log.error("Error with search request: ", e);
+		}
+
+		return suggestions;
 	}
 
     @Cacheable(value="popularQueries", key="{#query + #page + #realm + #faction}")

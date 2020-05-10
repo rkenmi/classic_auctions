@@ -24,6 +24,7 @@ import {Desktop, Mobile, Tablet} from '../helpers/mediaTypes';
 import {setCurrentRealm, setError} from '../actions/actions';
 import allianceIcon from '../../resources/static/images/alliance_50.png';
 import hordeIcon from '../../resources/static/images/horde_50.png';
+import {Typeahead} from 'react-bootstrap-typeahead';
 
 class ItemList extends React.Component{
   constructor(props) {
@@ -33,6 +34,7 @@ class ItemList extends React.Component{
     const currentRealm = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).realm;
     const currentFaction = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).faction;
     this.state = {
+      suggestions: [],
       mobileNavExpanded: false,
       hasSearched: false,
       loading: false,
@@ -82,9 +84,21 @@ class ItemList extends React.Component{
   };
 
   handleChange = (event) => {
-    // let fieldName = event.target.name;
-    let query = event.target.value;
+    const query = event;
     this.setState({query});
+
+    const {currentRealm, currentFaction} = this.state;
+    if (!currentRealm || !currentFaction) {
+      return;
+    }
+    const formattedRealm = currentRealm.replace(" ", "");
+    client({
+      method: 'GET',
+      path: '/api/autocomplete?q=' + this.state.query + '&realm=' + formattedRealm + '&faction=' + currentFaction
+    }).done(response => {
+      const suggestions = response.entity;
+      this.setState({suggestions});
+    });
   };
 
   goToPage = (pageNum) => {
@@ -137,6 +151,23 @@ class ItemList extends React.Component{
     )
   };
 
+  onEnterBtnSearch = (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'Enter') {
+      this.onSearch();
+    }
+  };
+
+  handlePickSuggestion = (e) => {
+    this.setState({query: e[0]})
+  };
+
+  getEmptyLabelString = () => {
+    if (!this.state.currentRealm || !this.state.currentFaction) {
+      return 'Please select a realm and faction.'
+    }
+    return 'No matches found.'
+  };
+
   renderDesktopView() {
     const realms = this.props.realms || [];
 
@@ -146,9 +177,20 @@ class ItemList extends React.Component{
           <h1>Classic Auctions</h1>
         </Navbar.Brand>
         <Nav style={{flex: 1, justifyContent: 'flex-end'}}>
-          <Form inline onSubmit={(e) => {e.preventDefault(); this.onSearch()}} style={{flex: 1}}>
-            <FormControl type="text" placeholder="Search" size={'sm'} className="mr-sm-2" value={this.state.query} onChange={this.handleChange}/>
-            <Button size='sm' variant="outline-info" onClick={() => this.onSearch()}>Search</Button>
+          <Form inline onSubmit={(e) => {e.preventDefault(); this.onSearch()}} style={{flex: 1, justifyContent: 'center'}}>
+            <Typeahead
+              id={'ah-typeahead'}
+              style={{flex: 0.75}}
+              defaultInputValue={this.state.query}
+              labelKey="name"
+              emptyLabel={this.getEmptyLabelString()}
+              options={this.state.suggestions}
+              placeholder="Search for an item"
+              onInputChange={this.handleChange}
+              onChange={this.handlePickSuggestion}
+              onKeyDown={(e) => this.onEnterBtnSearch(e)}
+            />
+            <Button variant="outline-info" onClick={() => this.onSearch()}>Search</Button>
           </Form>
           <DropdownButton variant='info' id="dropdown-item-button" title={realms.includes(this.state.currentRealm) ? this.state.currentRealm : "Realm"} style={{marginLeft: 10}}>
             {realms.map((realm) => {
@@ -174,7 +216,7 @@ class ItemList extends React.Component{
   renderMobileView() {
     const realms = this.props.realms || [];
     return (
-      <div style={{display: 'flex', flexDirection: 'column', marginTop: 100}}>
+      <div style={{display: 'flex', flexDirection: 'column', marginTop: 75}}>
         <Navbar fixed={'top'} style={{display: 'flex'}} bg={'dark'} variant={'dark'} expand={'lg'}
                 onToggle={()=> {this.setState({mobileNavExpanded: !this.state.mobileNavExpanded})} }
                 expanded={this.state.mobileNavExpanded}>
@@ -185,7 +227,19 @@ class ItemList extends React.Component{
           <Navbar.Collapse style={{justifyContent: 'center', marginTop: 25}} id="basic-navbar-nav">
             <Form inline onSubmit={this.onMobileSearch}>
               <InputGroup style={{flex: 1}}>
-                <FormControl size='lg' type="text" value={this.state.query} placeholder="Search" onChange={this.handleChange}/>
+                <Typeahead
+                  id={'ah-typeahead'}
+                  style={{flex: 1, display: 'flex'}}
+                  defaultInputValue={this.state.query}
+                  bsSize={'lg'}
+                  labelKey="name"
+                  emptyLabel={this.getEmptyLabelString()}
+                  options={this.state.suggestions}
+                  placeholder="Search for an item"
+                  onInputChange={this.handleChange}
+                  onChange={this.handlePickSuggestion}
+                  onKeyDown={(e) => this.onEnterBtnSearch(e)}
+                />
                 <InputGroup.Append>
                   <Button size='lg' onClick={() => {this.onSearch()}}>
                     <FontAwesomeIcon icon={faSearch} inverse/>

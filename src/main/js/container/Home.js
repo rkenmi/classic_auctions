@@ -9,13 +9,14 @@ import {connect} from 'react-redux';
 import {setError, setRealms} from '../actions/actions';
 import {Desktop, Mobile, Tablet} from '../helpers/mediaTypes';
 import Search from './Search';
+import {Typeahead} from 'react-bootstrap-typeahead';
 const React = require('react');
 const client = require('../client');
 
 class Home extends React.Component {
   constructor(props) {
   	super(props);
-  	this.state = {query: ''};
+  	this.state = {query: '', suggestions: []};
 	}
 
 	componentDidMount() {
@@ -41,9 +42,38 @@ class Home extends React.Component {
 	};
 
 	handleChange = (event) => {
-		// let fieldName = event.target.name;
-		let query = event.target.value;
+		let query = event;
 		this.setState({query});
+
+		const {currentRealm, currentFaction} = this.state;
+		if (!currentRealm || !currentFaction) {
+			return;
+		}
+		const formattedRealm = currentRealm.replace(" ", "");
+		client({
+			method: 'GET',
+			path: '/api/autocomplete?q=' + this.state.query + '&realm=' + formattedRealm + '&faction=' + currentFaction
+		}).done(response => {
+			const suggestions = response.entity;
+			this.setState({suggestions});
+		});
+	};
+
+	getEmptyLabelString = () => {
+		if (!this.state.currentRealm || !this.state.currentFaction) {
+			return 'Please select a realm and faction.'
+		}
+		return 'No matches found.'
+	};
+
+	handlePickSuggestion = (e) => {
+		this.setState({query: e[0]})
+	};
+
+	onEnterBtnSearch = (e) => {
+		if (e.key === 'ArrowRight' || e.key === 'Enter') {
+			this.onSearch();
+		}
 	};
 
 	renderDesktopView = () => {
@@ -55,9 +85,18 @@ class Home extends React.Component {
 					<h1>{'Classic Auctions'}</h1>
 				</Row>
 				<Row style={{marginBottom: 20, justifyContent: 'center'}}>
-					<Form style={{width: 350}} onSubmit={(e) => {e.preventDefault(); this.onSearch()}}>
-						<FormControl type="text" placeholder="Search" onChange={this.handleChange}/>
-					</Form>
+					<Typeahead
+						id={'ah-typeahead'}
+						style={{flex: 0.75}}
+						defaultInputValue={this.state.query}
+						labelKey="name"
+						emptyLabel={this.getEmptyLabelString()}
+						options={this.state.suggestions}
+						placeholder="Search for an item"
+						onInputChange={this.handleChange}
+						onChange={this.handlePickSuggestion}
+						onKeyDown={(e) => this.onEnterBtnSearch(e)}
+					/>
 					<DropdownButton variant='info' id="dropdown-item-button" title={realms.includes(this.state.currentRealm) ? this.state.currentRealm : "Realm"} style={{marginLeft: 10}}>
 						{realms.map((realm) => {
 							return (
