@@ -2,126 +2,72 @@ import {connect} from 'react-redux';
 
 const React = require('react');
 import {
-  Button,
-  Col,
   Container, DropdownButton,
   Dropdown,
-  Form,
-  FormControl,
-  InputGroup,
   Nav,
   Navbar,
   Pagination,
-  Row,
   Table, Modal, Spinner
 } from 'react-bootstrap';
 import Item from './Item';
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-const client = require('../client');
 const qs = require('qs');
-import {faSearch} from '@fortawesome/free-solid-svg-icons';
 import {Desktop, Mobile, Tablet} from '../helpers/mediaTypes';
-import {setCurrentRealm, setError} from '../actions/actions';
-import allianceIcon from '../../resources/static/images/alliance_50.png';
-import hordeIcon from '../../resources/static/images/horde_50.png';
-import {Typeahead} from 'react-bootstrap-typeahead';
+import {
+  autocomplete,
+  getEmptyLabelString, keysPressed, pickSuggestion,
+  setCurrentFaction,
+  setCurrentRealm,
+  setError,
+  search,
+  updateSearchQuery, setMobileNavExpanded, updatePageNum, loadFromURL
+} from '../actions/actions';
+import AHSearchForm from './AHSearchForm';
+import moment from 'moment';
+import FactionDropdown from './widgets/FactionDropdown';
+import RealmDropdown from './widgets/RealmDropdown';
 
 class ItemList extends React.Component{
   constructor(props) {
     super(props);
+    this.state = {};
+    // Use URL parameters to perform search
     const query = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).q;
     const page = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).p;
     const currentRealm = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).realm;
     const currentFaction = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).faction;
-    this.state = {
-      suggestions: [],
-      mobileNavExpanded: false,
-      hasSearched: false,
-      loading: false,
-      items: [],
-      query: query ? query : '',
-      page : page ? page : 0,
-      currentRealm,
-      currentFaction
-    };
+    this.props.loadFromURLParams(query, page, currentRealm, currentFaction);
   }
 
   componentDidMount() {
-    if (this.state.query) {
-      this.onSearch(this.state.page);
-    }
+    // if (this.props.query) {
+    //   this.props.onSearch();
+    //   return;
+    // }
+
+    // this.props.onSearch()
   }
 
-  onSearch = (pageNum=0) => {
-    const {query, currentRealm, currentFaction} = this.state;
-
-    if (query === '') {
-      this.props.setError('Error', 'Please enter a search query.');
-      return;
-    }
-    if (currentRealm == null || currentFaction == null) {
-      this.props.setError('Error', 'Please specify both Realm and Faction.');
-      return;
-    }
-
-    this.setState({mobileNavExpanded: false, loading: true});
-    this.performSearch(pageNum);
-  };
-
-  performSearch = (pageNum=0) => {
-    const {currentRealm, currentFaction} = this.state;
-
-    const formattedRealm = currentRealm.replace(" ", "");
-
-    this.props.history.push('/search?q=' + this.state.query + '&p=' + pageNum + '&realm=' + formattedRealm + '&faction=' + currentFaction);
-    client({
-      method: 'GET',
-      path: '/api/search?q=' + this.state.query + '&p=' + pageNum + '&realm=' + formattedRealm + '&faction=' + currentFaction
-    }).done(response => {
-      const {items, page, queryMs} = response.entity;
-      this.setState({items, page, queryMs, loading: false, hasSearched: true});
-    });
-  };
-
-  handleChange = (event) => {
-    const query = event;
-    this.setState({query});
-
-    const {currentRealm, currentFaction} = this.state;
-    if (!currentRealm || !currentFaction) {
-      return;
-    }
-    const formattedRealm = currentRealm.replace(" ", "");
-    client({
-      method: 'GET',
-      path: '/api/autocomplete?q=' + this.state.query + '&realm=' + formattedRealm + '&faction=' + currentFaction
-    }).done(response => {
-      const suggestions = response.entity;
-      this.setState({suggestions});
-    });
-  };
-
   goToPage = (pageNum) => {
-    if (pageNum < 0 || pageNum > this.state.page && this.getPagesRemaining() === 0) {
+    if (pageNum < 0 || pageNum > this.props.page && this.getPagesRemaining() === 0) {
       return;
     }
-    this.performSearch(pageNum);
+    this.props.onSearch(pageNum);
   };
 
   getLastPage = () => {
-    return this.state.page + Math.floor((this.state.items.length-1) / 15)
+    return this.props.page + Math.floor((this.props.items.length-1) / 15)
   };
 
   getPagesRemaining = () => {
-    return Math.floor((this.state.items.length-1) / 15);
+    return Math.floor((this.props.items.length-1) / 15);
   };
 
   getPagesBefore = () => {
-    return this.state.page;
+    return this.props.page;
   };
 
   renderPagination = () => {
-    const {page} = this.state;
+    const {page} = this.props;
 
 
     return (
@@ -151,25 +97,9 @@ class ItemList extends React.Component{
     )
   };
 
-  onEnterBtnSearch = (e) => {
-    if (e.key === 'ArrowRight' || e.key === 'Enter') {
-      this.onSearch();
-    }
-  };
-
-  handlePickSuggestion = (e) => {
-    this.setState({query: e[0]})
-  };
-
-  getEmptyLabelString = () => {
-    if (!this.state.currentRealm || !this.state.currentFaction) {
-      return 'Please select a realm and faction.'
-    }
-    return 'No matches found.'
-  };
-
   renderDesktopView() {
     const realms = this.props.realms || [];
+    const {currentRealm, currentFaction} = this.props;
 
     return (
       <Navbar variant="dark" style={{display: 'flex'}}>
@@ -177,88 +107,43 @@ class ItemList extends React.Component{
           <h1>Classic Auctions</h1>
         </Navbar.Brand>
         <Nav style={{flex: 1, justifyContent: 'flex-end'}}>
-          <Form inline onSubmit={(e) => {e.preventDefault(); this.onSearch()}} style={{flex: 1, justifyContent: 'center'}}>
-            <Typeahead
-              id={'ah-typeahead'}
-              style={{flex: 0.75}}
-              defaultInputValue={this.state.query}
-              labelKey="name"
-              emptyLabel={this.getEmptyLabelString()}
-              options={this.state.suggestions}
-              placeholder="Search for an item"
-              onInputChange={this.handleChange}
-              onChange={this.handlePickSuggestion}
-              onKeyDown={(e) => this.onEnterBtnSearch(e)}
-            />
-            <Button variant="outline-info" onClick={() => this.onSearch()}>Search</Button>
-          </Form>
-          <DropdownButton variant='info' id="dropdown-item-button" title={realms.includes(this.state.currentRealm) ? this.state.currentRealm : "Realm"} style={{marginLeft: 10}}>
-            {realms.map((realm) => {
-              return (
-                <Dropdown.Item key={realms.indexOf(realm)} as="button" onSelect={() => {this.setState({currentRealm: realm})}}>{realm}</Dropdown.Item>
-              );
-            })}
-          </DropdownButton>
-          <DropdownButton variant='info' id="dropdown-item-button" title={this.state.currentFaction || "Faction"} style={{marginLeft: 10}}>
-            <Dropdown.Item as="button" onSelect={() => {this.setState({currentFaction: 'Alliance'})}}><img src={allianceIcon}/> Alliance</Dropdown.Item>
-            <Dropdown.Item as="button" onSelect={() => {this.setState({currentFaction: 'Horde'})}}><img src={hordeIcon}/> Horde</Dropdown.Item>
-          </DropdownButton>
+          <AHSearchForm
+            onSearch={this.props.onSearch}
+            options={this.props.suggestions.map(m => ({...m, name: m.itemName}))}
+            onInputChange={this.props.onHandleAutoComplete}
+            onChange={this.props.onPickSuggestion}
+            onKeyDown={this.props.onKeyPressed}
+          />
+          <RealmDropdown currentRealm={currentRealm} onSelect={this.props.setCurrentRealm} realms={realms}/>
+          <FactionDropdown currentFaction={currentFaction} onSelect={this.props.setCurrentFaction}/>
         </Nav>
       </Navbar>
     );
   }
 
-  onMobileSearch = (e) => {
-    e.preventDefault();
-    this.onSearch();
-  };
-
   renderMobileView() {
     const realms = this.props.realms || [];
+    const {mobileNavExpanded, currentRealm, currentFaction} = this.props;
     return (
       <div style={{display: 'flex', flexDirection: 'column', marginTop: 75}}>
         <Navbar fixed={'top'} style={{display: 'flex'}} bg={'dark'} variant={'dark'} expand={'lg'}
-                onToggle={()=> {this.setState({mobileNavExpanded: !this.state.mobileNavExpanded})} }
-                expanded={this.state.mobileNavExpanded}>
+                onToggle={()=> {this.props.setMobileNavExpanded(!mobileNavExpanded)} }
+                expanded={this.props.mobileNavExpanded}>
           <Navbar.Brand>
             <h4>Classic Auctions</h4>
           </Navbar.Brand>
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
-          <Navbar.Collapse style={{justifyContent: 'center', marginTop: 25}} id="basic-navbar-nav">
-            <Form inline onSubmit={this.onMobileSearch}>
-              <InputGroup style={{flex: 1}}>
-                <Typeahead
-                  id={'ah-typeahead'}
-                  style={{flex: 1, display: 'flex'}}
-                  defaultInputValue={this.state.query}
-                  bsSize={'lg'}
-                  labelKey="name"
-                  emptyLabel={this.getEmptyLabelString()}
-                  options={this.state.suggestions}
-                  placeholder="Search for an item"
-                  onInputChange={this.handleChange}
-                  onChange={this.handlePickSuggestion}
-                  onKeyDown={(e) => this.onEnterBtnSearch(e)}
-                />
-                <InputGroup.Append>
-                  <Button size='lg' onClick={() => {this.onSearch()}}>
-                    <FontAwesomeIcon icon={faSearch} inverse/>
-                  </Button>
-                </InputGroup.Append>
-              </InputGroup>
-            </Form>
-            <div style={{display: 'flex', flex: 1, flexDirection: 'row', justifyContent: 'flex-start', marginTop: 25, marginBottom: 25}}>
-              <DropdownButton variant='info' id="dropdown-item-button" title={realms.includes(this.state.currentRealm) ? this.state.currentRealm : "Realm"}>
-                {realms.map((realm) => {
-                  return (
-                    <Dropdown.Item key={realms.indexOf(realm)} as="button" onSelect={() => {this.setState({currentRealm: realm})}}>{realm}</Dropdown.Item>
-                  );
-                })}
-              </DropdownButton>
-              <DropdownButton variant='info' id="dropdown-item-button" style={{marginLeft: 15}} title={this.state.currentFaction || "Faction"}>
-                <Dropdown.Item as="button" onSelect={() => {this.setState({currentFaction: 'Alliance'})}}><img src={allianceIcon}/> Alliance</Dropdown.Item>
-                <Dropdown.Item as="button" onSelect={() => {this.setState({currentFaction: 'Horde'})}}><img src={hordeIcon}/> Horde</Dropdown.Item>
-              </DropdownButton>
+          <Navbar.Collapse style={{justifyContent: 'center', marginTop: 5}} id="basic-navbar-nav">
+            <AHSearchForm
+              onSearch={this.props.onSearch}
+              options={this.props.suggestions.map(m => ({...m, name: m.itemName}))}
+              onInputChange={this.props.onHandleAutoComplete}
+              onChange={this.props.onPickSuggestion}
+              onKeyDown={(e) => this.props.onKeyPressed(e, false)}
+            />
+            <div style={{display: 'flex', flex: 1, flexDirection: 'row', justifyContent: 'flex-start', marginTop: 10}}>
+              <RealmDropdown style={{marginLeft: 0}} currentRealm={currentRealm} onSelect={this.props.setCurrentRealm} realms={realms}/>
+              <FactionDropdown currentFaction={currentFaction} onSelect={this.props.setCurrentFaction}/>
             </div>
           </Navbar.Collapse>
         </Navbar>
@@ -267,17 +152,19 @@ class ItemList extends React.Component{
   }
 
   renderFooter() {
-    if (!this.state.items || this.state.items.length === 0) {
+    if (!this.props.items || this.props.items.length === 0) {
       return;
     }
-    const dateStr = new Date(this.state.items[0].timestamp).toString();
+
+    // ES documents have seconds as timestamp
+    const dateStr = moment(new Date(this.props.items[0].timestamp)).fromNow();
 
     return (
       <div>
         {this.renderPagination()}
         <Container style={{display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBottom: 25}}>
           <div style={{color: '#fff', fontSize: 10}}>Last data refresh: {dateStr}</div>
-          <div style={{color: '#fff', fontSize: 10}}>Query response time: {this.state.queryMs} ms</div>
+          <div style={{color: '#fff', fontSize: 10}}>Query response time: {this.props.queryMs} ms</div>
         </Container>
       </div>
     )
@@ -288,7 +175,7 @@ class ItemList extends React.Component{
   };
 
   renderTable(items) {
-    if (this.state.loading) {
+    if (this.props.loading) {
       return (
         <Container style={{flex: 1, display: 'flex', marginTop: 35, justifyContent: 'center'}}>
           <Spinner variant='info' animation="border" role="status">
@@ -298,7 +185,7 @@ class ItemList extends React.Component{
       )
     }
 
-    if (this.state.hasSearched === false && items.length === 0) {
+    if (this.props.hasSearched === false && items.length === 0) {
       return (
         <Container style={{flex: 1, display: 'flex', marginTop: 35, justifyContent: 'center', color: '#fff'}}>
           Welcome! Search for an item in the input box and select your realm/faction to get started.
@@ -334,9 +221,9 @@ class ItemList extends React.Component{
   }
 
   render() {
-    const {loading} = this.state;
-    const items = this.state.items.map(features =>
-      <Item key={this.state.items.indexOf(features)} features={features}/>
+    const {loading} = this.props;
+    const items = this.props.items.map(features =>
+      <Item key={this.props.items.indexOf(features)} features={features}/>
     );
 
     return (
@@ -358,7 +245,18 @@ class ItemList extends React.Component{
 
 function mapStateToProps(state) {
   return {
+    searchBarRef: state.visibilityReducer.searchBarRef,
+    loading: state.pageReducer.loading,
+    hasSearched: state.pageReducer.hasSearched,
+    queryMs: state.pageReducer.queryMs,
+    page: state.pageReducer.page,
     realms: state.pageReducer.realms,
+    items: state.pageReducer.items,
+    query: state.pageReducer.query,
+    suggestions: state.pageReducer.suggestions,
+    currentRealm: state.pageReducer.currentRealm,
+    currentFaction: state.pageReducer.currentFaction,
+    mobileNavExpanded: state.pageReducer.mobileNavExpanded,
     errorTitle: state.pageReducer.errorTitle,
     errorMessage: state.pageReducer.errorMessage
   }
@@ -369,8 +267,38 @@ function mapDispatchToProps(dispatch) {
     setCurrentRealm: (realm) => {
       dispatch(setCurrentRealm(realm));
     },
+    setCurrentFaction: (faction) => {
+      dispatch(setCurrentFaction(faction));
+    },
+    getEmptyLabelString: () => {
+      dispatch(getEmptyLabelString())
+    },
+    updateQuery: (q) => {
+      dispatch(updateSearchQuery(q))
+    },
+    updatePageNum: (p) => {
+      dispatch(updatePageNum(p))
+    },
+    onHandleAutoComplete: (evt) => {
+      dispatch(autocomplete(evt))
+    },
+    onPickSuggestion: (evt) => {
+      dispatch(pickSuggestion(evt))
+    },
+    onKeyPressed: (evt, isDesktop=true) => {
+      dispatch(keysPressed(evt, isDesktop))
+    },
+    onSearch: (pageNum, overrideQuery=null) => {
+      dispatch(search(pageNum, overrideQuery))
+    },
+    setMobileNavExpanded: (expanded) => {
+      dispatch(setMobileNavExpanded(expanded))
+    },
     setError: (title, message) => {
       dispatch(setError(title, message));
+    },
+    loadFromURLParams: (query, page, currentRealm, currentFaction) => {
+      dispatch(loadFromURL(query, page, currentRealm, currentFaction));
     }
   }
 }

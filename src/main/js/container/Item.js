@@ -1,4 +1,5 @@
 import {TIME_REMAINING} from '../helpers/constants';
+import {getColorCode} from '../helpers/searchHelpers';
 
 const React = require('react');
 
@@ -23,16 +24,16 @@ export default class Item extends React.Component{
   };
 
   render() {
-    const {rarity, id, itemLvl, itemName, minLvlRequired, bid, buyout, seller, timeRemaining, quantity} = this.props.features;
+    const {metaItem, id, itemName, bid, buyout, seller, timeRemaining, quantity} = this.props.features;
 
     return (
       <tr>
         <td>{quantity}</td>
         <td>
-          <a style={{color: '#' + rarity}} href={'https://classicdb.ch/?item=' + id} target={'_blank'} data-wowhead={'item=' + id + '&domain=classic'}>{itemName}</a>
+          <a style={{color: getColorCode(metaItem.quality)}} href={'https://classicdb.ch/?item=' + id} target={'_blank'} data-wowhead={'item=' + id + '&domain=classic'}>{itemName}</a>
         </td>
-        <td>{itemLvl}</td>
-        <td>{minLvlRequired}</td>
+        <td>{metaItem.itemLvl}</td>
+        <td>{metaItem.minLvlRequired}</td>
         {this.renderMoney(bid)}
         {this.renderMoney(buyout)}
         <td>{seller}</td>

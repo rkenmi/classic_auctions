@@ -2,21 +2,42 @@
 import { hot } from 'react-hot-loader/root';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import {Button, Container, Dropdown, DropdownButton, Form, FormControl, Modal, Nav, Navbar, Row} from 'react-bootstrap';
+import {
+	Container,
+	Dropdown,
+	DropdownButton,
+	Modal,
+	Row
+} from 'react-bootstrap';
 import allianceIcon from '../../resources/static/images/alliance_50.png';
 import hordeIcon from '../../resources/static/images/horde_50.png';
 import {connect} from 'react-redux';
-import {setError, setRealms} from '../actions/actions';
+import {
+	autocomplete,
+	getEmptyLabelString,
+	keysPressed,
+	pickSuggestion,
+	search,
+	setCurrentFaction, setCurrentRealm,
+	setError,
+	setRealms
+} from '../actions/actions';
 import {Desktop, Mobile, Tablet} from '../helpers/mediaTypes';
 import Search from './Search';
-import {Typeahead} from 'react-bootstrap-typeahead';
 const React = require('react');
 const client = require('../client');
-
+import AHSearchForm from './AHSearchForm';
+import RealmDropdown from './widgets/RealmDropdown';
+import FactionDropdown from './widgets/FactionDropdown';
 class Home extends React.Component {
   constructor(props) {
   	super(props);
-  	this.state = {query: '', suggestions: []};
+  	this.state = {
+  		query: '',
+			suggestions: [],
+			isLoadingSuggestions: false,
+			openSuggestionsMenu: false,
+  	};
 	}
 
 	componentDidMount() {
@@ -25,89 +46,26 @@ class Home extends React.Component {
 		});
 	}
 
-	onSearch = () => {
-		const {query, currentRealm, currentFaction} = this.state;
-
-		if (query === '') {
-			this.props.setError('Error', 'Please enter a search query.');
-			return;
-		}
-		if (currentRealm == null || currentFaction == null) {
-			this.props.setError('Error', 'Please specify both Realm and Faction.');
-			return;
-		}
-
-		const formattedRealm = currentRealm.replace(" ", "");
-		this.props.history.push('/search?q=' + this.state.query + '&p=0&realm=' + formattedRealm + '&faction=' + currentFaction);
-	};
-
-	handleChange = (event) => {
-		let query = event;
-		this.setState({query});
-
-		const {currentRealm, currentFaction} = this.state;
-		if (!currentRealm || !currentFaction) {
-			return;
-		}
-		const formattedRealm = currentRealm.replace(" ", "");
-		client({
-			method: 'GET',
-			path: '/api/autocomplete?q=' + this.state.query + '&realm=' + formattedRealm + '&faction=' + currentFaction
-		}).done(response => {
-			const suggestions = response.entity;
-			this.setState({suggestions});
-		});
-	};
-
-	getEmptyLabelString = () => {
-		if (!this.state.currentRealm || !this.state.currentFaction) {
-			return 'Please select a realm and faction.'
-		}
-		return 'No matches found.'
-	};
-
-	handlePickSuggestion = (e) => {
-		this.setState({query: e[0]})
-	};
-
-	onEnterBtnSearch = (e) => {
-		if (e.key === 'ArrowRight' || e.key === 'Enter') {
-			this.onSearch();
-		}
-	};
-
 	renderDesktopView = () => {
 		const realms = this.props.realms || [];
+		const {currentRealm, currentFaction} = this.props;
 
 	  return (
 			<Container style={{flex: 1, justifyContent: 'flex-end'}}>
 				<Row style={{marginTop: '15%', marginBottom: 30, justifyContent: 'center'}}>
 					<h1>{'Classic Auctions'}</h1>
 				</Row>
-				<Row style={{marginBottom: 20, justifyContent: 'center'}}>
-					<Typeahead
-						id={'ah-typeahead'}
-						style={{flex: 0.75}}
-						defaultInputValue={this.state.query}
-						labelKey="name"
-						emptyLabel={this.getEmptyLabelString()}
-						options={this.state.suggestions}
-						placeholder="Search for an item"
-						onInputChange={this.handleChange}
-						onChange={this.handlePickSuggestion}
-						onKeyDown={(e) => this.onEnterBtnSearch(e)}
-					/>
-					<DropdownButton variant='info' id="dropdown-item-button" title={realms.includes(this.state.currentRealm) ? this.state.currentRealm : "Realm"} style={{marginLeft: 10}}>
-						{realms.map((realm) => {
-							return (
-								<Dropdown.Item key={realms.indexOf(realm)} as="button" onSelect={() => {this.setState({currentRealm: realm})}}>{realm}</Dropdown.Item>
-							);
-						})}
-					</DropdownButton>
-					<DropdownButton variant='info' id="dropdown-item-button" title={this.state.currentFaction || "Faction"} style={{marginLeft: 10}}>
-						<Dropdown.Item as="button" onSelect={() => {this.setState({currentFaction: 'Alliance'})}}><img src={allianceIcon}/> Alliance</Dropdown.Item>
-						<Dropdown.Item as="button" onSelect={() => {this.setState({currentFaction: 'Horde'})}}><img src={hordeIcon}/> Horde</Dropdown.Item>
-					</DropdownButton>
+				<Row style={{display: 'flex', justifyContent: 'center', marginBottom: 20}}>
+            <RealmDropdown currentRealm={currentRealm} onSelect={this.props.setCurrentRealm} realms={realms}/>
+            <FactionDropdown style={{marginRight: 10}} currentFaction={currentFaction} onSelect={this.props.setCurrentFaction}/>
+						<AHSearchForm
+							onSearch={this.props.onSearchFromHome}
+							onChange={this.props.onPickSuggestionFromHome}
+							onKeyDown={this.props.onKeyPressedFromHome}
+							options={this.props.suggestions.map(m => ({...m, name: m.itemName}))}
+							onInputChange={this.props.onHandleAutoComplete}
+							typeaheadStyle={{flex: 1}}
+						/>
 				</Row>
 			</Container>
     )
@@ -140,6 +98,10 @@ class Home extends React.Component {
 function mapStateToProps(state) {
 	return {
 		realms: state.pageReducer.realms,
+		query: state.pageReducer.query,
+		suggestions: state.pageReducer.suggestions,
+		currentRealm: state.pageReducer.currentRealm,
+		currentFaction: state.pageReducer.currentFaction,
 		errorTitle: state.pageReducer.errorTitle,
 		errorMessage: state.pageReducer.errorMessage
 	}
@@ -147,11 +109,32 @@ function mapStateToProps(state) {
 
 function mapDispatchToProps(dispatch) {
 	return {
+		setCurrentRealm: (realm) => {
+			dispatch(setCurrentRealm(realm));
+		},
+		setCurrentFaction: (faction) => {
+			dispatch(setCurrentFaction(faction));
+		},
 		setRealms: (realms) => {
 			dispatch(setRealms(realms));
 		},
 		setError: (title, message) => {
 			dispatch(setError(title, message));
+		},
+		onHandleAutoComplete: (evt) => {
+			dispatch(autocomplete(evt))
+		},
+		onPickSuggestionFromHome: (evt) => {
+			dispatch(pickSuggestion(evt, true))
+		},
+		onKeyPressedFromHome: (evt) => {
+			dispatch(keysPressed(evt, true, true))
+		},
+		onSearchFromHome: (pageNum) => {
+			dispatch(search(pageNum, null, true))
+		},
+		getEmptyLabelString: () => {
+			dispatch(getEmptyLabelString())
 		}
 	}
 }
