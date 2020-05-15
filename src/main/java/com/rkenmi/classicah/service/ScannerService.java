@@ -4,7 +4,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import com.rkenmi.classicah.document.Item;
 import lombok.extern.log4j.Log4j2;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -24,6 +23,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,11 +74,32 @@ public class ScannerService {
         }
     }
 
+    private List<String> getTokensFromItemName(String itemName) {
+        String[] tokens = itemName.split(" ");
+        ArrayList<String> tokensList = new ArrayList<>(Arrays.asList(tokens));
+
+        ArrayList<String> results = new ArrayList<>();
+
+        for (int windowSize = 2; windowSize < tokensList.size(); windowSize++) {
+            for (int i = 0; i < tokensList.size(); i++) {
+                int e_i = i + windowSize;
+                if (e_i > tokensList.size()) {
+                    break;
+                }
+
+                List<String> sublist = tokensList.subList(i, e_i);
+                results.add(String.join(" ", sublist));
+            }
+        }
+        tokensList.add(itemName);
+        tokensList.addAll(results);
+        return tokensList;
+    }
+
     private List<Item> readLuaObject(final S3Object s3Object) {
         final List<Item> items = new ArrayList<>();
         try {
             InputStreamReader in = new InputStreamReader(s3Object.getObjectContent());
-//            FileReader in = new FileReader("Auc-ScanData.lua");
             BufferedReader bufferedReader = new BufferedReader(in);
             StringBuffer buffer = new StringBuffer();
             String line;
@@ -97,18 +119,17 @@ public class ScannerService {
                 Matcher itemFeatureMatcher = Pattern.compile(itemFeaturesRegex).matcher(itemLua);
                 if (itemFeatureMatcher.find()) {
                     Item item = Item.builder()
-                            .rarity(itemFeatureMatcher.group(1))
                             .id(Integer.parseInt(itemFeatureMatcher.group(2)))
                             .itemName(itemFeatureMatcher.group(3))
-                            .itemLvl(Integer.parseInt(itemFeatureMatcher.group(4)))
                             .bid(itemFeatureMatcher.group(5))
                             .timeRemaining(Integer.parseInt(itemFeatureMatcher.group(6)))
                             .quantity(Integer.parseInt(itemFeatureMatcher.group(7)))
-                            .minLvlRequired(Integer.parseInt(itemFeatureMatcher.group(8)))
                             .buyout(itemFeatureMatcher.group(9))
                             .seller(itemFeatureMatcher.group(10))
-                            .timestamp(s3Object.getObjectMetadata().getLastModified())
-                            .suggest(itemFeatureMatcher.group(3))
+                            .timestamp(new Date())
+                            .suggest(
+                                    getTokensFromItemName(itemFeatureMatcher.group(3))
+                            )
                             .build();
                     items.add(item);
                     log.info("Retrieved item {}", item);
@@ -125,7 +146,9 @@ public class ScannerService {
         CreateIndexRequest createIndexRequest = new CreateIndexRequest(INDEX);
         Map<String, Object> jsonMap = new HashMap<>();
         Map<String, Object> properties = new HashMap<>();
-        properties.put("suggest", ImmutableMap.of("type", "completion"));
+        Map<String, Object> suggestMap = new HashMap<>();
+        suggestMap.put("type", "completion");
+        properties.put("suggest", suggestMap);
         jsonMap.put("properties", properties);
         return createIndexRequest.mapping(jsonMap);
     }

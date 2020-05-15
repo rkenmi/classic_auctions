@@ -4,7 +4,8 @@ module.exports = {
     mode: 'development',
     target: 'web',
     entry: [
-        './src/main/js/index.js'
+        './src/main/js/index.js',
+        './src/main/resources/static/main.css', // this is just so that webpack-dev-server can detect css properly
     ],
     devtool: 'inline-source-map',
     cache: true,
@@ -13,7 +14,7 @@ module.exports = {
         watchContentBase: true,
         historyApiFallback: true,  // this is for fallback url for React Router
         proxy: {
-            '/api': 'http://localhost:8080'
+            '/api': 'http://localhost:8080/'
         },
         hot: true
     },

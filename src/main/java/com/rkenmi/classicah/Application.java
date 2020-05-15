@@ -15,14 +15,41 @@
  */
 package com.rkenmi.classicah;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rkenmi.classicah.model.MetaItem;
+import com.rkenmi.classicah.service.MetaItemService;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
 
-// tag::code[]
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+
+@Log4j2
 @SpringBootApplication
 public class Application {
 	public static void main(String[] args) {
 		SpringApplication.run(Application.class, args);
 	}
+
+	@Bean
+	CommandLineRunner runner(MetaItemService metaItemService) {
+		return args -> {
+			// read json and write to db
+			ObjectMapper mapper = new ObjectMapper();
+			TypeReference<List<MetaItem>> typeReference = new TypeReference<List<MetaItem>>(){};
+			InputStream inputStream = TypeReference.class.getResourceAsStream("/json/item-db.json");
+			try {
+				List<MetaItem> items = mapper.readValue(inputStream,typeReference);
+				metaItemService.initialize(items);
+				log.info("Item JSON loaded");
+			} catch (IOException e){
+				log.error("Failed to load Item JSON", e);
+			}
+		};
+	}
 }
-// end::code[]

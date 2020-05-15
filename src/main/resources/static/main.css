@@ -76,13 +76,80 @@ h1,h4 {
     color: greenyellow;
 }
 
+#ah-typeahead {
+    background-color: #555;
+}
+
 .wowhead-tooltip-powered {
     background: none;
     display: none;
 }
 
+.suggestion-dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.25rem 1.5rem;
+    clear: both;
+    font-weight: 400;
+    /*color: #212529;*/
+    text-align: inherit;
+    white-space: nowrap;
+    background-color: #555;
+    border: 0;
+}
+
+.suggestion-search-icon {
+    background-position: 4px 3px;
+    background-repeat: no-repeat;
+}
+
+.suggestion-search-icon > div {
+    background-position: left center;
+    background-repeat: no-repeat;
+    background-image: url("images/socket.png");
+}
+
+.suggestion-search-icon > div span {
+    padding-left: 30px;
+}
+
+.suggestion-dropdown-item:hover, .suggestion-dropdown-item:focus {
+    text-decoration: none;
+    background-color: #333;
+}
+
+.suggestion-dropdown-item.active, .suggestion-dropdown-item:active {
+    text-decoration: none;
+    background-color: #263238;
+}
+
+.suggestion-dropdown-item.disabled, .suggestion-dropdown-item:disabled {
+    color: #fff;
+    pointer-events: none;
+    background-color: transparent;
+}
+
+.suggestion-dropdown-item-text {
+    display: block;
+    padding: 0.25rem 1.5rem;
+    color: #fff;
+}
+
+/* No matches found... */
+#ah-typeahead > li > a {
+    color: #fff;
+}
+
+
 td, th {
     border: 1px solid #999;
     padding: 0.5rem;
     text-align: left;
+}
+
+.rbt-highlight-text {
+    background-color: inherit;
+    color: inherit;
+    font-weight: bold;
+    padding: 0;
 }

@@ -18,6 +18,8 @@ package com.rkenmi.classicah.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.rkenmi.classicah.document.Item;
+import com.rkenmi.classicah.model.MetaItem;
+import com.rkenmi.classicah.service.MetaItemService;
 import lombok.extern.log4j.Log4j2;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
@@ -45,7 +47,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -60,22 +62,28 @@ import static com.rkenmi.classicah.data.SupportedRealms.US_WEST;
 public class SearchController {
     private RestHighLevelClient client;
     private ObjectMapper objectMapper = new ObjectMapper();
+    private MetaItemService metaItemService;
 
 	@Autowired
-    public SearchController(RestHighLevelClient client) {
+    public SearchController(RestHighLevelClient client, MetaItemService metaItemService) {
     	this.client = client;
+    	this.metaItemService = metaItemService;
+	}
+
+	private String normalizeQuery(final String q) {
+		return q.replaceAll("[\\\\/:*?\"<>|{}\\[\\]]", "");
 	}
 
 	@Cacheable(value="autoComplete", key="{#query + #realm + #faction}")
 	@GetMapping(value = "/api/autocomplete")
-	public List<String> searchSuggestions(
+	public List<Map<String, Object>> searchSuggestions(
 			@RequestParam("q") String query,
 			@RequestParam(name = "realm") String realm,
 			@RequestParam(name = "faction") String faction
 	) {
 		SuggestionBuilder suggestionBuilder = SuggestBuilders
 				.completionSuggestion("suggest")
-				.prefix(query)
+				.prefix(normalizeQuery(query))
 				.skipDuplicates(true)
 				.size(5);
 
@@ -86,7 +94,7 @@ public class SearchController {
 		searchRequest.indices(String.format("ah_item_%s_%s", realm.toLowerCase(), faction.toLowerCase()));
 		searchRequest.source(sourceBuilder);
 
-		List<String> suggestions = new ArrayList<>();
+		List<Map<String, Object>> suggestions = new ArrayList<>();
 
 		try {
 			SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
@@ -94,8 +102,23 @@ public class SearchController {
 			CompletionSuggestion completionSuggestion = suggest.getSuggestion("item-suggest");
 			for (CompletionSuggestion.Entry entry : completionSuggestion.getEntries()) {
 				for (CompletionSuggestion.Entry.Option option : entry) {
-					String suggestText = option.getText().string();
-					suggestions.add(suggestText);
+					Map<String, Object> sourceMap = option.getHit().getSourceAsMap();
+					HashMap<String, Object> resultsMap = new HashMap<>();
+					Integer id;
+					try {
+						id = (Integer) sourceMap.get("id");
+					} catch (ClassCastException e) {
+						id = Integer.parseInt((String) sourceMap.get("id"));
+					}
+					MetaItem metaItem = metaItemService.getItem(id);
+					resultsMap.put("quality", metaItem.getQuality());
+					resultsMap.put("icon", metaItem.getIcon());
+					resultsMap.put("classType", metaItem.getClassType());
+					resultsMap.put("itemName", sourceMap.get("itemName"));
+					resultsMap.put("timestamp", sourceMap.get("timestamp"));
+					resultsMap.put("id", sourceMap.get("id"));
+//					String suggestText = option.getText().string();
+					suggestions.add(resultsMap);
 				}
 			}
 		} catch (ElasticsearchStatusException e) {
@@ -118,7 +141,7 @@ public class SearchController {
 			@RequestParam(name = "faction") String faction
 	) {
 		Instant startQueryTime = Instant.now();
-		QueryBuilder queryBuilder = QueryBuilders.matchPhrasePrefixQuery("itemName", query.toLowerCase());
+		QueryBuilder queryBuilder = QueryBuilders.matchPhrasePrefixQuery("itemName", normalizeQuery(query).toLowerCase());
 
 		SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
 		sourceBuilder.query(queryBuilder);
@@ -138,7 +161,12 @@ public class SearchController {
 			SearchHit[] searchHits = searchResponse.getHits().getHits();
 			if (searchHits.length > 0) {
 				Arrays.stream(searchHits)
-						.forEach(hit -> items.add(objectMapper.convertValue(hit.getSourceAsMap(), Item.class)));
+						.map(hit -> objectMapper.convertValue(hit.getSourceAsMap(), Item.class))
+						.forEach(item -> {
+							MetaItem metaItem = metaItemService.getItem(item.getId());
+							item.setMetaItem(metaItem);
+							items.add(item);
+						});
 			}
 			log.info("Returning {} search hits", searchHits.length);
 		} catch (ElasticsearchStatusException e) {
