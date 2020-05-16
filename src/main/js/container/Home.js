@@ -1,34 +1,30 @@
-'use strict';
 import { hot } from 'react-hot-loader/root';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import {
 	Container,
-	Dropdown,
-	DropdownButton,
 	Modal,
 	Row
 } from 'react-bootstrap';
-import allianceIcon from '../../resources/static/images/alliance_50.png';
-import hordeIcon from '../../resources/static/images/horde_50.png';
 import {connect} from 'react-redux';
 import {
 	autocomplete,
 	getEmptyLabelString,
 	keysPressed,
 	pickSuggestion,
-	search,
+	searchFromHomePage,
 	setCurrentFaction, setCurrentRealm,
 	setError,
 	setRealms
 } from '../actions/actions';
 import {Desktop, Mobile, Tablet} from '../helpers/mediaTypes';
-import Search from './Search';
+import Search from './AuctionHouseWrapper';
 const React = require('react');
 const client = require('../client');
-import AHSearchForm from './AHSearchForm';
+import AHSearchForm from './AuctionHouseSearch';
 import RealmDropdown from './widgets/RealmDropdown';
 import FactionDropdown from './widgets/FactionDropdown';
+import {withRouter} from 'react-router-dom';
 class Home extends React.Component {
   constructor(props) {
   	super(props);
@@ -131,7 +127,7 @@ function mapDispatchToProps(dispatch) {
 			dispatch(keysPressed(evt, true, true))
 		},
 		onSearchFromHome: (pageNum) => {
-			dispatch(search(pageNum, null, true))
+			dispatch(searchFromHomePage())
 		},
 		getEmptyLabelString: () => {
 			dispatch(getEmptyLabelString())

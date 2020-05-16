@@ -28,7 +28,7 @@ function visibilityReducer(state = SHOW_ALL, action) {
   }
 }
 
-function pageReducer(state = {suggestions: [], items: [], loading: false, mobileNavExpanded: false}, action) {
+function pageReducer(state = {suggestions: [], items: [], hasSearched: false, query: '', loading: false, mobileNavExpanded: false}, action) {
   switch (action.type) {
     case SET_REALMS:
       return {

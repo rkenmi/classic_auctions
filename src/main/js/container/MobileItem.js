@@ -1,5 +1,6 @@
 import {TIME_REMAINING} from '../helpers/constants';
 import {getColorCode} from '../helpers/searchHelpers';
+import {Desktop, Mobile} from '../helpers/mediaTypes';
 
 const React = require('react');
 
@@ -30,10 +31,10 @@ export default class Item extends React.Component{
 
   renderMoneyColumn = (bid, buyout) => {
     return (
-      <td className={'align-middle'}>
+      <div>
         {this.renderMoney('Bid:', bid)}
         {this.renderMoney('Buyout:', buyout)}
-      </td>
+      </div>
     )
   };
 
@@ -43,23 +44,28 @@ export default class Item extends React.Component{
 
     return (
       <tr className={'align-middle'}>
-        <td className={'align-middle'}>{quantity}</td>
-        <td className={'align-middle'} style={{ height: '75px'}}>
-          <a style={{color: getColorCode(metaItem.quality)}} href={'https://classicdb.ch/?item=' + id} target={'_blank'} data-wowhead={'item=' + id + '&domain=classic'}>
-            <span className={'table-row-search-icon'}
-                  style={{display: 'flex', justifyContent: 'space-between', backgroundImage: 'url("'+imgHref+'")'}}>
-              <span style={{display: 'flex'}}>
-                <span style={{marginLeft: 50, display: 'flex', alignItems: 'center'}}>
-                  {itemName}
+        <td className={'align-middle'} style={{height: '100px'}}>
+          <div>
+            <span style={{display: 'flex', flex: 1}}>
+              <a style={{color: getColorCode(metaItem.quality)}} href={'https://classicdb.ch/?item=' + id} target={'_blank'}>
+                <span className={'table-row-search-icon'}
+                      style={{display: 'flex', justifyContent: 'space-between', backgroundImage: 'url("'+imgHref+'")'}}>
+                  <span style={{display: 'flex'}}>
+                    <span style={{marginLeft: 50, display: 'flex', alignItems: 'center'}}>
+                      {itemName}
+                    </span>
+                  </span>
                 </span>
-              </span>
+              </a>
+              <span style={{color: '#fff', display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'flex-end'}}> x {quantity}</span>
             </span>
-          </a>
+            {this.renderMoneyColumn(bid, buyout)}
+            <div style={{display: 'flex', justifyContent: 'space-between'}}>
+              <span>Duration: <span style={{fontWeight: 'bold'}}>{TIME_REMAINING[timeRemaining-1]}</span></span>
+              <span>Seller: <span style={{fontWeight: 'bold'}}>{seller}</span></span>
+            </div>
+          </div>
         </td>
-        <td className={'align-middle'}>{metaItem.minLvlRequired}</td>
-        {this.renderMoneyColumn(bid, buyout)}
-        <td className={'align-middle'}>{seller}</td>
-        <td className={'align-middle'}>{TIME_REMAINING[timeRemaining-1]}</td>
       </tr>
     );
   }

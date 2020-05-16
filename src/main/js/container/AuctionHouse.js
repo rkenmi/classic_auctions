@@ -9,8 +9,6 @@ import {
   Pagination,
   Table, Modal, Spinner
 } from 'react-bootstrap';
-import Item from './Item';
-const qs = require('qs');
 import {Desktop, Mobile, Tablet} from '../helpers/mediaTypes';
 import {
   autocomplete,
@@ -21,30 +19,32 @@ import {
   search,
   updateSearchQuery, setMobileNavExpanded, updatePageNum, loadFromURL
 } from '../actions/actions';
-import AHSearchForm from './AHSearchForm';
+import AHSearchForm from './AuctionHouseSearch';
 import moment from 'moment';
 import FactionDropdown from './widgets/FactionDropdown';
 import RealmDropdown from './widgets/RealmDropdown';
+import AuctionTable from './widgets/AuctionTable';
+import {Link, withRouter} from 'react-router-dom';
+import {getParamsFromURL, normalizeParam} from '../helpers/searchHelpers';
 
-class ItemList extends React.Component{
+class AuctionHouse extends React.Component{
   constructor(props) {
     super(props);
     this.state = {};
     // Use URL parameters to perform search
-    const query = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).q;
-    const page = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).p;
-    const currentRealm = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).realm;
-    const currentFaction = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).faction;
-    this.props.loadFromURLParams(query, page, currentRealm, currentFaction);
+    const args = getParamsFromURL(this.props.location.search);
+    if (args[0] && args[1] && args[2] && args[3]) {
+      this.props.loadFromURLParams(...args);
+    }
   }
 
-  componentDidMount() {
-    // if (this.props.query) {
-    //   this.props.onSearch();
-    //   return;
-    // }
-
-    // this.props.onSearch()
+  componentDidUpdate(prevProps) {
+    if (prevProps.location.search !== this.props.location.search && this.props.history.action === 'POP') {
+      const args = getParamsFromURL(this.props.location.search);
+      this.props.updateQuery(args[0]);
+      this.props.onHandleAutoComplete(args[0]);
+      this.props.loadFromURLParams(...args);
+    }
   }
 
   goToPage = (pageNum) => {
@@ -66,29 +66,42 @@ class ItemList extends React.Component{
     return this.props.page;
   };
 
+  getPageHref = (p) => {
+    const {query, currentFaction, currentRealm} = this.props;
+    const q = normalizeParam(query), f = normalizeParam(currentFaction), r = normalizeParam(currentRealm).replace(" ", "");
+    return '/search?q=' + q + '&p=' + p + '&realm=' + r + '&faction=' + f;
+  };
+
   renderPagination = () => {
     const {page} = this.props;
-
 
     return (
       <Pagination style={{flex: 1, justifyContent: 'center'}}>
         <Pagination.First className={'pagination-item'} onClick={() => this.goToPage(0)}/>
         <Pagination.Prev className={'pagination-item'} onClick={() => this.goToPage(page-1)}/>
         {page > 1 ?
-          <Pagination.Item className={'pagination-item'} onClick={() => this.goToPage(page-2)}>{page - 1}</Pagination.Item>
+              <a className='pagination-item page-link' href={this.getPageHref(page-2)}>
+                  {page - 1}
+              </a>
           : null
         }
         {page > 0 ?
-          <Pagination.Item className={'pagination-item'} onClick={() => this.goToPage(page-1)}>{page}</Pagination.Item>
+            <a className='pagination-item page-link' href={this.getPageHref(page-1)}>
+              {page}
+            </a>
           : null
         }
         <Pagination.Item className={'pagination-item current'}>{page + 1}</Pagination.Item>
         {this.getPagesRemaining() > 0 ?
-          <Pagination.Item className={'pagination-item'} onClick={() => this.goToPage(page+1)}>{page+2}</Pagination.Item>
+            <a className='pagination-item page-link' href={this.getPageHref(page+1)}>
+              {page+2}
+            </a>
           : null
         }
         {this.getPagesRemaining() > 1 ?
-          <Pagination.Item className={'pagination-item'} onClick={() => this.goToPage(page+2)}>{page+3}</Pagination.Item>
+            <a className='pagination-item page-link' href={this.getPageHref(page+2)}>
+              {page+3}
+            </a>
           : null
         }
         <Pagination.Next className={'pagination-item'} onClick={() => this.goToPage(page + 1)}/>
@@ -141,7 +154,7 @@ class ItemList extends React.Component{
               onChange={this.props.onPickSuggestion}
               onKeyDown={(e) => this.props.onKeyPressed(e, false)}
             />
-            <div style={{display: 'flex', flex: 1, flexDirection: 'row', justifyContent: 'flex-start', marginTop: 10}}>
+            <div style={{display: 'flex', flex: 1, flexDirection: 'row', justifyContent: 'flex-start', marginTop: 15, marginBottom: 5}}>
               <RealmDropdown style={{marginLeft: 0}} currentRealm={currentRealm} onSelect={this.props.setCurrentRealm} realms={realms}/>
               <FactionDropdown currentFaction={currentFaction} onSelect={this.props.setCurrentFaction}/>
             </div>
@@ -174,57 +187,8 @@ class ItemList extends React.Component{
     this.props.setError(null, null);
   };
 
-  renderTable(items) {
-    if (this.props.loading) {
-      return (
-        <Container style={{flex: 1, display: 'flex', marginTop: 35, justifyContent: 'center'}}>
-          <Spinner variant='info' animation="border" role="status">
-            <span className="sr-only">Loading...</span>
-          </Spinner>
-        </Container>
-      )
-    }
-
-    if (this.props.hasSearched === false && items.length === 0) {
-      return (
-        <Container style={{flex: 1, display: 'flex', marginTop: 35, justifyContent: 'center', color: '#fff'}}>
-          Welcome! Search for an item in the input box and select your realm/faction to get started.
-        </Container>
-      )
-    }
-
-    const renderResults = () => {
-      if (items.length === 0) {
-        return <tr><td colSpan={8} style={{textAlign: 'center'}}>No results</td></tr>
-      } else {
-        return items.slice(0, 15);
-      }
-    };
-
-    return (
-      <Table responsive striped bordered hover size="xs" variant={"dark"}>
-        <tbody>
-        <tr>
-          <th>Qty</th>
-          <th>Name</th>
-          <th>iLvl</th>
-          <th>Req</th>
-          <th>Bid</th>
-          <th>Buyout</th>
-          <th>Seller</th>
-          <th>Time Left</th>
-        </tr>
-        {renderResults()}
-        </tbody>
-      </Table>
-    )
-  }
-
   render() {
-    const {loading} = this.props;
-    const items = this.props.items.map(features =>
-      <Item key={this.props.items.indexOf(features)} features={features}/>
-    );
+    const {loading, items} = this.props;
 
     return (
       <Container style={{display: 'flex', flexDirection: 'column'}}>
@@ -236,7 +200,7 @@ class ItemList extends React.Component{
             <Modal.Body>{this.props.errorMessage}</Modal.Body>
           </Modal.Header>
         </Modal>
-        {this.renderTable(items)}
+        <AuctionTable hasSearched={this.props.hasSearched} items={items}/>
         {!loading && items.length > 0 ? this.renderFooter() : null}
       </Container>
     )
@@ -304,4 +268,4 @@ function mapDispatchToProps(dispatch) {
 }
 
 
-export default connect(mapStateToProps, mapDispatchToProps)(ItemList)
+export default connect(mapStateToProps, mapDispatchToProps)(AuctionHouse)

@@ -98,6 +98,21 @@ h1,h4 {
     border: 0;
 }
 
+.table-row-search-icon {
+    background-position: 1px 3px;
+    background-repeat: no-repeat;
+    background-size: 40px;
+}
+
+.table-row-search-icon > span {
+    background-position: left center;
+    background-repeat: no-repeat;
+    background-image: url("images/socket-lg.png");
+    background-size: 45px;
+    height: 45px;
+}
+
+
 .suggestion-search-icon {
     background-position: 4px 3px;
     background-repeat: no-repeat;

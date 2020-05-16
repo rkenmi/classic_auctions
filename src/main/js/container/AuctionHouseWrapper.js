@@ -2,13 +2,14 @@
 import { hot } from 'react-hot-loader/root';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import ItemList from './ItemList';
+import ItemList from './AuctionHouse';
 import {connect} from 'react-redux';
 import {setRealms} from '../actions/actions';
+import {withRouter} from 'react-router-dom';
 const React = require('react');
 const client = require('../client');
 
-class Search extends React.Component {
+class AuctionHouseWrapper extends React.Component {
 	constructor(props) {
 		super(props);
 	}
@@ -39,4 +40,4 @@ function mapDispatchToProps(dispatch) {
 }
 
 
-export default connect(mapStateToProps, mapDispatchToProps)(hot(Search));
+export default connect(mapStateToProps, mapDispatchToProps)(hot(AuctionHouseWrapper))

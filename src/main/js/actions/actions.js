@@ -93,15 +93,42 @@ export function loadFromURL(query, page, currentRealm, currentFaction) {
       dispatch(setCurrentRealm(currentRealm)),
       dispatch(setCurrentFaction(currentFaction))
     ]).then(() => {
-      console.log(query);
-      dispatch(search(page, query));
+      // All done
+      dispatch(search(page, query, false));
     }, (err) => {
+      // Error
       dispatch(setError("Invalid URL", err))
     });
   }
 }
 
-export function search(pageNum=0, overrideQuery=null, redirect=false) {
+function searchIsValid(dispatch, query, currentRealm, currentFaction) {
+  if (query === '' || query === undefined) {
+    dispatch(setError('Error', 'Please enter a search query'));
+    return false;
+  } else if (currentRealm == null || currentFaction == null) {
+    dispatch(setError('Error', 'Please specify both Realm and Faction.'));
+    return false;
+  }
+  return true;
+}
+
+export function searchFromHomePage(overrideQuery=null) {
+  return function(dispatch, getState) {
+    const {pageReducer} = getState();
+    const {currentRealm, currentFaction} = pageReducer;
+    const query = overrideQuery === null ? pageReducer.query : overrideQuery;
+
+    if (!searchIsValid(dispatch, query, currentRealm, currentFaction)) {
+      return;
+    }
+
+    const formattedRealm = currentRealm.replace(" ", "");
+    dispatch(push('/search?q=' + query + '&p=0&realm=' + formattedRealm + '&faction=' + currentFaction));
+  };
+}
+
+export function search(pageNum=0, overrideQuery=null, pushHistory=true)  {
   // We can invert control here by returning a function - the "thunk".
   // When this function is passed to `dispatch`, the thunk middleware will intercept it,
   // and call it with `dispatch` and `getState` as arguments.
@@ -111,40 +138,28 @@ export function search(pageNum=0, overrideQuery=null, redirect=false) {
     const {currentRealm, currentFaction} = pageReducer;
     const query = overrideQuery === null ? pageReducer.query : overrideQuery;
 
-    if (query === '') {
-      dispatch(setError('Error', 'Please enter a search query'));
+    if (!searchIsValid(dispatch, query, currentRealm, currentFaction)) {
       return;
     }
-    if (currentRealm == null || currentFaction == null) {
-      dispatch(setError('Error', 'Please specify both Realm and Faction.'));
-      return;
-    }
-
     const formattedRealm = currentRealm.replace(" ", "");
 
-    if (redirect) {
+    if (pushHistory) {
       dispatch(push('/search?q=' + query + '&p=0&realm=' + formattedRealm + '&faction=' + currentFaction));
-      return;
     }
-
     dispatch(loadSpinner());
     dispatch(setMobileNavExpanded(false));
-    return requestSearch(pageNum, query, formattedRealm, currentFaction).then(
+    return requestSearch(dispatch, pageNum, query, formattedRealm, currentFaction).then(
       (done) => dispatch(updateSearchResults(done.entity)),
       (error) => dispatch(setError('Search failed', error)),
     );
   };
 }
 
-const requestSearch = (pageNum=0, query, formattedRealm, currentFaction) => {
+const requestSearch = (dispatch, pageNum=0, query, formattedRealm, currentFaction) => {
   let p = normalizeNumber(pageNum),
     q = normalizeParam(query),
     r = normalizeParam(formattedRealm),
     f = normalizeParam(currentFaction);
-
-  if (p < 0) {
-    p = 0;
-  }
 
   return client({
     method: 'GET',
@@ -184,21 +199,30 @@ const requestAutoComplete = (query, formattedRealm, currentFaction) => {
   });
 };
 
-export function pickSuggestion(e, redirect=false) {
+export function pickSuggestion(e, fromHomePage=false) {
   return function(dispatch) {
     if (e.length === 0) {
       return;
     }
     dispatch(updateSearchQuery(e[0].name));
-    dispatch(search(0, e[0].name, redirect));
+
+    if (fromHomePage) {
+      dispatch(searchFromHomePage(e[0].name));
+    } else {
+      dispatch(search(0, e[0].name));
+    }
   };
 }
 
-export function keysPressed(e, isDesktop=true, redirect=false) {
+export function keysPressed(e, isDesktop=true, fromHomePage=false) {
   return function(dispatch, getState) {
     if (e.key === 'ArrowRight' || e.key === 'Enter') {
-      dispatch(search(0, null, redirect));
+      if (fromHomePage) {
+        dispatch(searchFromHomePage());
+        return;
+      }
 
+      dispatch(search(0, null));
       // Hide suggestion dropdown
       const {visibilityReducer} = getState();
       if (visibilityReducer.searchBarRef) {

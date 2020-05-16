@@ -1,16 +1,23 @@
 import {Button, DropdownItem, Form, InputGroup} from 'react-bootstrap';
-import {Menu, menuItemContainer, Typeahead} from 'react-bootstrap-typeahead';
+import {
+  hintContainer,
+  Input,
+  Menu,
+  menuItemContainer,
+  Typeahead,
+  TypeaheadInputSingle
+} from 'react-bootstrap-typeahead';
 import {getColorCode, hideSuggestionItemsTooltip} from '../helpers/searchHelpers';
 import {connect} from 'react-redux';
 import {setSearchBarRef} from '../actions/actions';
 import React from 'react';
-import {Desktop, Mobile} from '../helpers/mediaTypes';
+import {Desktop, Mobile, Tablet} from '../helpers/mediaTypes';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faSearch} from '@fortawesome/free-solid-svg-icons';
 
 const URL = 'https://wow.zamimg.com/images/wow/icons/small/';
 
-class AHSearchForm extends React.Component {
+class AuctionHouseSearch extends React.Component {
 
   componentWillUnmount() {
     this.props.setRef(null);
@@ -54,13 +61,6 @@ class AHSearchForm extends React.Component {
     );
   }
 
-  getEmptyLabel() {
-    if (!this.props.currentRealm || !this.props.currentFaction) {
-      return 'Please select a realm and faction.'
-    }
-    return 'No matches found.'
-  }
-
   getTypeahead() {
     let styling = {flex: 1};
 
@@ -78,7 +78,10 @@ class AHSearchForm extends React.Component {
         style={styling}
         defaultInputValue={this.props.query}
         labelKey="name"
-        emptyLabel={this.getEmptyLabel()}
+        renderInput={(inputProps) => (
+          <TypeaheadInputSingle {...inputProps} ref={inputProps.ref} value={this.props.query}/>
+        )}
+        open={this.shouldOpenSuggestions()}
         options={this.props.options}
         placeholder="Search for an item"
         onInputChange={this.props.onInputChange}
@@ -87,6 +90,12 @@ class AHSearchForm extends React.Component {
       />
     )
   }
+
+  shouldOpenSuggestions = () => {
+    // undefined means the Typeahead component controls when to open/close. false means it will never open.
+    // Suggestions should never be open if the realm and faction isn't specified
+    return this.props.currentRealm && this.props.currentFaction ? undefined : false
+  };
 
   onKeyDown = (e) => {
     hideSuggestionItemsTooltip();
@@ -101,6 +110,19 @@ class AHSearchForm extends React.Component {
     this.props.setRef(ref);
   };
 
+  renderMobileOrTablet() {
+    return (
+      <InputGroup style={{flex: 1}}>
+        {this.getTypeahead()}
+        <InputGroup.Append>
+          <Button onClick={() => {this.props.onSearch()}}>
+            <FontAwesomeIcon icon={faSearch} inverse/>
+          </Button>
+        </InputGroup.Append>
+      </InputGroup>
+    )
+  }
+
   render() {
     if (this.props.pureTypeahead) {
       return this.getTypeahead();
@@ -113,15 +135,11 @@ class AHSearchForm extends React.Component {
           <Button style={{marginLeft: 10}} variant="outline-info" onClick={() => this.props.onSearch()}>Search</Button>
         </Desktop>
         <Mobile>
-          <InputGroup style={{flex: 1}}>
-            {this.getTypeahead()}
-            <InputGroup.Append>
-              <Button onClick={() => {this.props.onSearch()}}>
-                <FontAwesomeIcon icon={faSearch} inverse/>
-              </Button>
-            </InputGroup.Append>
-          </InputGroup>
+          {this.renderMobileOrTablet()}
         </Mobile>
+        <Tablet>
+          {this.renderMobileOrTablet()}
+        </Tablet>
       </Form>
     )
   }
@@ -144,4 +162,4 @@ function mapDispatchToProps(dispatch) {
   }
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(AHSearchForm);
+export default connect(mapStateToProps, mapDispatchToProps)(AuctionHouseSearch);

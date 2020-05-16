@@ -4,7 +4,7 @@ import configureStore from './createStore';
 import ReactDOM from 'react-dom';
 import { Route , Switch} from 'react-router-dom'
 import Home from './container/Home';
-import Search from './container/Search';
+import AuctionHouseWrapper from './container/AuctionHouseWrapper';
 import Error from './container/Error';
 import { ConnectedRouter } from 'connected-react-router'
 import {history} from './createStore';
@@ -14,7 +14,7 @@ ReactDOM.render(
   <Provider store={store}>
       <ConnectedRouter history={history}>
         <Switch>
-          <Route path="/search" exact component={Search} />
+          <Route path="/search" exact component={AuctionHouseWrapper} />
           <Route path="/" exact component={Home} />
           {/*Fallback route*/}
           <Route component={Error} />
