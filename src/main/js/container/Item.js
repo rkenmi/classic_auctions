@@ -1,5 +1,8 @@
 import {TIME_REMAINING} from '../helpers/constants';
 import {getColorCode} from '../helpers/searchHelpers';
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {faChartBar} from '@fortawesome/free-solid-svg-icons';
+import {Button} from 'react-bootstrap';
 
 const React = require('react');
 
@@ -37,6 +40,18 @@ export default class Item extends React.Component{
     )
   };
 
+  renderGraphColumn = () => {
+    return (
+      <td className={'align-middle'}>
+        <div style={{display: 'flex'}}>
+          <Button size='sm' variant={'outline-info'} onClick={this.props.onClickGraph}>
+            <FontAwesomeIcon icon={faChartBar} />
+          </Button>
+        </div>
+      </td>
+    )
+  };
+
   render() {
     const {metaItem, id, itemName, bid, buyout, seller, timeRemaining, quantity} = this.props.features;
     const imgHref = 'https://render-classic-us.worldofwarcraft.com/icons/56/' + metaItem.icon + '.jpg';
@@ -60,6 +75,7 @@ export default class Item extends React.Component{
         {this.renderMoneyColumn(bid, buyout)}
         <td className={'align-middle'}>{seller}</td>
         <td className={'align-middle'}>{TIME_REMAINING[timeRemaining-1]}</td>
+        {this.renderGraphColumn()}
       </tr>
     );
   }
