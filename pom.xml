@@ -157,6 +157,31 @@
 				</executions>
 			</plugin>
 			<!-- end::frontend-maven-plugin[] -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.6</version>
+				<executions>
+					<execution>
+						<id>prepare</id>
+						<phase>package</phase>
+						<configuration>
+							<tasks>
+								<!-- .ebextensions needs to be in the root path inside the JAR unfortunately
+								and this was the easiest way to automate this -->
+								<unzip src="${project.build.directory}/${project.build.finalName}.jar" dest="${project.build.directory}/${project.build.finalName}" />
+								<copy todir="${project.build.directory}/${project.build.finalName}/" overwrite="false">
+									<fileset dir="./" includes=".ebextensions/**"/>
+								</copy>
+								<zip compress="false" destfile="${project.build.directory}/${project.build.finalName}.jar" basedir="${project.build.directory}/${project.build.finalName}"/>
+							</tasks>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 
