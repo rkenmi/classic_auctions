@@ -17,6 +17,9 @@ public class SupportedRealms {
             "Rattlegore",
             "Myzrael",
             "Atiesh",
+            "Whitemane",
+            "Grobbulus",
+            "Fairbanks",
             "Blaumeux"
     );
 }
