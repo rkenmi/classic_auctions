@@ -17,15 +17,17 @@ import {
   setCurrentRealm,
   setError,
   search,
-  updateSearchQuery, setMobileNavExpanded, updatePageNum, loadFromURL
+  updateSearchQuery, setMobileNavExpanded, updatePageNum, loadFromURL, searchOnSetRealmAndFaction
 } from '../actions/actions';
 import AHSearchForm from './AuctionHouseSearch';
 import moment from 'moment';
-import FactionDropdown from './widgets/FactionDropdown';
 import RealmDropdown from './widgets/RealmDropdown';
 import AuctionTable from './widgets/AuctionTable';
-import {Link, withRouter} from 'react-router-dom';
 import {getParamsFromURL, normalizeParam} from '../helpers/searchHelpers';
+import {MISC_URL} from '../helpers/endpoints';
+import {Logo} from '../helpers/domHelpers';
+const ALLIANCE_ICON = MISC_URL + 'alliance_50.png';
+const HORDE_ICON = MISC_URL + 'horde_50.png';
 
 class AuctionHouse extends React.Component{
   constructor(props) {
@@ -36,6 +38,18 @@ class AuctionHouse extends React.Component{
     if (args[0] && args[1] && args[2] && args[3]) {
       this.props.loadFromURLParams(...args);
     }
+
+    // preload assets beforehand
+    this._preload();
+  }
+
+  _preload() {
+    return (
+      <span>
+        <img src={ALLIANCE_ICON}/>
+        <img src={HORDE_ICON}/>
+      </span>
+    )
   }
 
   componentDidUpdate(prevProps) {
@@ -115,9 +129,9 @@ class AuctionHouse extends React.Component{
     const {currentRealm, currentFaction} = this.props;
 
     return (
-      <Navbar variant="dark" style={{display: 'flex'}}>
+      <Navbar variant="dark" style={{display: 'flex', paddingLeft: 0, paddingRight: 0}}>
         <Navbar.Brand href="/">
-          <h1>Classic Auctions</h1>
+          <Logo/>
         </Navbar.Brand>
         <Nav style={{flex: 1, justifyContent: 'flex-end'}}>
           <AHSearchForm
@@ -127,8 +141,12 @@ class AuctionHouse extends React.Component{
             onChange={this.props.onPickSuggestion}
             onKeyDown={this.props.onKeyPressed}
           />
-          <RealmDropdown currentRealm={currentRealm} onSelect={this.props.setCurrentRealm} realms={realms}/>
-          <FactionDropdown currentFaction={currentFaction} onSelect={this.props.setCurrentFaction}/>
+          <RealmDropdown currentRealm={currentRealm}
+                         currentFaction={currentFaction}
+                         onSelectRealmAndFaction={this.props.setCurrentRealmAndFactionAndSearch}
+                         onSelectRealm={this.props.setCurrentRealm}
+                         onSelectFaction={this.props.setCurrentFaction}
+                         realms={realms}/>
         </Nav>
       </Navbar>
     );
@@ -143,7 +161,7 @@ class AuctionHouse extends React.Component{
                 onToggle={()=> {this.props.setMobileNavExpanded(!mobileNavExpanded)} }
                 expanded={this.props.mobileNavExpanded}>
           <Navbar.Brand>
-            <h4>Classic Auctions</h4>
+            <Logo/>
           </Navbar.Brand>
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse style={{justifyContent: 'center', marginTop: 5}} id="basic-navbar-nav">
@@ -155,8 +173,13 @@ class AuctionHouse extends React.Component{
               onKeyDown={(e) => this.props.onKeyPressed(e, false)}
             />
             <div style={{display: 'flex', flex: 1, flexDirection: 'row', justifyContent: 'flex-start', marginTop: 15, marginBottom: 5}}>
-              <RealmDropdown style={{marginLeft: 0}} currentRealm={currentRealm} onSelect={this.props.setCurrentRealm} realms={realms}/>
-              <FactionDropdown currentFaction={currentFaction} onSelect={this.props.setCurrentFaction}/>
+              <RealmDropdown style={{marginLeft: 0}}
+                             currentRealm={currentRealm}
+                             currentFaction={currentFaction}
+                             onSelectRealmAndFaction={this.props.setCurrentRealmAndFactionAndSearch}
+                             onSelectRealm={this.props.setCurrentRealm}
+                             onSelectFaction={this.props.setCurrentFaction}
+                             realms={realms}/>
             </div>
           </Navbar.Collapse>
         </Navbar>
@@ -228,6 +251,9 @@ function mapStateToProps(state) {
 
 function mapDispatchToProps(dispatch) {
   return {
+    setCurrentRealmAndFactionAndSearch: (realm, faction) => {
+      dispatch(searchOnSetRealmAndFaction(realm, faction));
+    },
     setCurrentRealm: (realm) => {
       dispatch(setCurrentRealm(realm));
     },

@@ -1,3 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Raleway&display=swap');
+@cdnURL: 'https://d2b9gcya89vi12.cloudfront.net/ico/misc/';
+
 table {
     border-collapse: collapse;
 }
@@ -6,12 +9,32 @@ body {
     background-color: #263238;
 }
 
-h1,h4 {
+h1 {
+    font-size: 64px;
+}
+
+h2 {
+    font-size: 48px;
+}
+
+h1 > span, h2 > span, h3 > span{
+    color: turquoise;
+}
+
+h1,h2,h3,h4 {
     margin-bottom: 0;
-    font-family: 'DejaVu Serif', Georgia, "Times New Roman", Times, serif;
+    font-family: 'Raleway', Arial, serif;
+    color: #f5f5f5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    text-shadow: rgba(0,0,0,.01) 0 0 1px;
+}
+
+#realmDropdown > * .dropdown-item:active {
     color: #fff;
-    text-shadow: -1px 1px 2px #555, 1px 1px 2px #555, 1px -1px 0 #555, -1px -1px 0 #555;
-    /*line-height: inherit;*/
+    text-decoration: none;
+    background-color: #17a2b8;
 }
 
 @media (min-width: 576px) {
@@ -21,11 +44,11 @@ h1,h4 {
 }
 
 .alliance {
-    background-image: url("images/alliance_50.png");
+    background-image: url("https://d2b9gcya89vi12.cloudfront.net/ico/misc/alliance_50.png");
 }
 
 .horde {
-    background-image: url("images/horde_50.png");
+    background-image: url("https://d2b9gcya89vi12.cloudfront.net/ico/misc/horde_50.png");
 }
 
 .money-gold, .money-silver, .money-copper {
@@ -35,15 +58,15 @@ h1,h4 {
 }
 
 .money-gold {
-    background-image: url("images/money_gold.gif");
+    background-image: url("https://d2b9gcya89vi12.cloudfront.net/ico/misc/money_gold.gif");
 }
 
 .money-silver {
-    background-image: url("images/money_silver.gif");
+    background-image: url("https://d2b9gcya89vi12.cloudfront.net/ico/misc/money_silver.gif");
 }
 
 .money-copper {
-    background-image: url("images/money_copper.gif");
+    background-image: url("https://d2b9gcya89vi12.cloudfront.net/ico/misc/money_copper.gif");
 }
 
 .pagination-item, .active {
@@ -107,7 +130,7 @@ h1,h4 {
 .table-row-search-icon > span {
     background-position: left center;
     background-repeat: no-repeat;
-    background-image: url("images/socket-lg.png");
+    background-image: url("https://d2b9gcya89vi12.cloudfront.net/ico/misc/socket-lg.png");
     background-size: 45px;
     height: 45px;
 }
@@ -121,7 +144,7 @@ h1,h4 {
 .suggestion-search-icon > div {
     background-position: left center;
     background-repeat: no-repeat;
-    background-image: url("images/socket.png");
+    background-image: url("https://d2b9gcya89vi12.cloudfront.net/ico/misc/socket.png");
 }
 
 .suggestion-search-icon > div span {
@@ -150,6 +173,51 @@ h1,h4 {
     color: #fff;
 }
 
+.btn-realm {
+    color: #000;
+    width: 100%;
+}
+
+
+.dropdown-submenu {
+    position: relative;
+}
+
+.dropdown-submenu>a:after {
+    content: "\f0da";
+    float: right;
+    border: none;
+    font-family: 'FontAwesome';
+}
+
+.dropdown-submenu>.dropdown-menu {
+    top: 0;
+    left: 100%;
+    margin-top: 0px;
+    margin-left: 0px;
+}
+
+.dropdown-realm.show.dropright > .btn-realm:focus, .dropdown-realm.focus, .dropdown-realm:focus {
+    color: #fff;
+    text-decoration: none;
+    background-color: #17a2b8;
+}
+
+.dropdown-submenu {
+    position: relative;
+}
+
+.dropdown-submenu .dropdown-menu {
+    top: 0;
+    left: 100%;
+    margin-top: -1px;
+}
+
+.btn-realm.focus, .btn-realm:focus {
+    outline: 0;
+    box-shadow: 0 0 0 0 #fff
+}
+
 /* No matches found... */
 #ah-typeahead > li > a {
     color: #fff;
@@ -168,3 +236,5 @@ td, th {
     font-weight: bold;
     padding: 0;
 }
+
+

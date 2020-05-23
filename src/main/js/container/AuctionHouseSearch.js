@@ -14,8 +14,7 @@ import React from 'react';
 import {Desktop, Mobile, Tablet} from '../helpers/mediaTypes';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faSearch} from '@fortawesome/free-solid-svg-icons';
-
-const URL = 'https://wow.zamimg.com/images/wow/icons/small/';
+import {TINY_ICON_URL} from '../helpers/endpoints';
 
 class AuctionHouseSearch extends React.Component {
 
@@ -25,7 +24,7 @@ class AuctionHouseSearch extends React.Component {
 
   renderSuggestionRow(result, index) {
     const TypeaheadMenuItem = menuItemContainer(DropdownItem);
-    const iconUrl = URL + result.icon + '.jpg';
+    const iconUrl = TINY_ICON_URL + result.icon + '.png';
 
     return (
       <div key={'search-anchor-' + index}>

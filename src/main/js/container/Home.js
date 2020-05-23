@@ -12,7 +12,7 @@ import {
 	getEmptyLabelString,
 	keysPressed,
 	pickSuggestion,
-	searchFromHomePage,
+	searchFromHomePage, searchOnSetRealmAndFaction,
 	setCurrentFaction, setCurrentRealm,
 	setError,
 	setRealms
@@ -23,8 +23,8 @@ const React = require('react');
 const client = require('../client');
 import AHSearchForm from './AuctionHouseSearch';
 import RealmDropdown from './widgets/RealmDropdown';
-import FactionDropdown from './widgets/FactionDropdown';
 import {withRouter} from 'react-router-dom';
+import {Logo} from '../helpers/domHelpers';
 class Home extends React.Component {
   constructor(props) {
   	super(props);
@@ -49,11 +49,16 @@ class Home extends React.Component {
 	  return (
 			<Container style={{flex: 1, justifyContent: 'flex-end'}}>
 				<Row style={{marginTop: '15%', marginBottom: 30, justifyContent: 'center'}}>
-					<h1>{'Classic Auctions'}</h1>
+					<Logo isHomePage={true}/>
 				</Row>
 				<Row style={{display: 'flex', justifyContent: 'center', marginBottom: 20}}>
-            <RealmDropdown currentRealm={currentRealm} onSelect={this.props.setCurrentRealm} realms={realms}/>
-            <FactionDropdown style={{marginRight: 10}} currentFaction={currentFaction} onSelect={this.props.setCurrentFaction}/>
+            <RealmDropdown style={{marginRight: 10}}
+													 currentRealm={currentRealm}
+													 currentFaction={currentFaction}
+													 onSelectRealmAndFaction={this.props.setCurrentRealmAndFactionAndSearch}
+													 onSelectRealm={this.props.setCurrentRealm}
+													 onSelectFaction={this.props.setCurrentFaction}
+													 realms={realms}/>
 						<AHSearchForm
 							onSearch={this.props.onSearchFromHome}
 							onChange={this.props.onPickSuggestionFromHome}
@@ -105,6 +110,9 @@ function mapStateToProps(state) {
 
 function mapDispatchToProps(dispatch) {
 	return {
+		setCurrentRealmAndFactionAndSearch: (realm, faction) => {
+			dispatch(searchOnSetRealmAndFaction(realm, faction));
+		},
 		setCurrentRealm: (realm) => {
 			dispatch(setCurrentRealm(realm));
 		},

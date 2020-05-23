@@ -13,6 +13,8 @@ export const SET_ERROR = 'SET_ERROR';
 export const TOGGLE_TODO = 'TOGGLE_TODO'
 export const LOAD_SPINNER = 'LOAD_SPINNER'
 export const SET_VISIBILITY_FILTER = 'SET_VISIBILITY_FILTER'
+export const PICK_SUGGESTION_EVENT = 'PICK_SUGGESTION_EVENT'
+export const ENTER_BTN_PRESSED_EVENT = 'ENTER_BTN_PRESSED_EVENT'
 export const UPDATE_SEARCH_RESULTS = 'UPDATE_SEARCH_RESULTS'
 export const UPDATE_SEARCH_SUGGESTIONS = 'UPDATE_SEARCH_SUGGESTIONS'
 export const UPDATE_SEARCH_QUERY = 'UPDATE_SEARCH_QUERY'
@@ -55,6 +57,16 @@ export function setSearchBarRef(ref) {
 
 export function toggleTodo(index) {
   return { type: TOGGLE_TODO, index }
+}
+
+export function pickSuggestionEvent() {
+  // For logging purposes
+  return { type: PICK_SUGGESTION_EVENT }
+}
+
+export function enterBtnPressedEvent() {
+  // For logging purposes
+  return { type: ENTER_BTN_PRESSED_EVENT }
 }
 
 export function setMobileNavExpanded(expanded) {
@@ -102,12 +114,36 @@ export function loadFromURL(query, page, currentRealm, currentFaction) {
   }
 }
 
+export function searchOnSetRealmAndFaction(currentRealm, currentFaction) {
+  return function(dispatch, getState) {
+    return Promise.all([
+      dispatch(setCurrentRealm(currentRealm)),
+      dispatch(setCurrentFaction(currentFaction))
+    ]).then(() => {
+      const {pageReducer} = getState();
+      const {query: q, currentRealm: r, currentFaction: f} = pageReducer;
+      // All done
+      const isValid = searchIsValid(null, q, r, f);
+      if (isValid) {
+        dispatch(search(0, q));
+      }
+    }, (err) => {
+      // Error
+      dispatch(setError("Error trying to search after picking realm + faction", err))
+    });
+  }
+}
+
 function searchIsValid(dispatch, query, currentRealm, currentFaction) {
   if (query === '' || query === undefined) {
-    dispatch(setError('Error', 'Please enter a search query'));
+    if (dispatch) {
+      dispatch(setError('Error', 'Please enter a search query'));
+    }
     return false;
   } else if (currentRealm == null || currentFaction == null) {
-    dispatch(setError('Error', 'Please specify both Realm and Faction.'));
+    if (dispatch) {
+      dispatch(setError('Error', 'Please specify both Realm and Faction.'));
+    }
     return false;
   }
   return true;
@@ -204,6 +240,7 @@ export function pickSuggestion(e, fromHomePage=false) {
     if (e.length === 0) {
       return;
     }
+    dispatch(pickSuggestionEvent());
     dispatch(updateSearchQuery(e[0].name));
 
     if (fromHomePage) {
@@ -217,21 +254,28 @@ export function pickSuggestion(e, fromHomePage=false) {
 export function keysPressed(e, isDesktop=true, fromHomePage=false) {
   return function(dispatch, getState) {
     if (e.key === 'ArrowRight' || e.key === 'Enter') {
+      dispatch(enterBtnPressedEvent());
+
       if (fromHomePage) {
         dispatch(searchFromHomePage());
         return;
       }
 
-      dispatch(search(0, null));
+      if (isDesktop) {
+        hideSuggestionItemsTooltip();
+      }
+
       // Hide suggestion dropdown
       const {visibilityReducer} = getState();
       if (visibilityReducer.searchBarRef) {
         visibilityReducer.searchBarRef.blur();
+        if (visibilityReducer.searchBarRef.state.activeItem && visibilityReducer.searchBarRef.state.isFocused) {
+          // no-op; let pickSuggestion do the work.
+          return;
+        }
       }
 
-      if (isDesktop) {
-        hideSuggestionItemsTooltip();
-      }
+      dispatch(search(0, null));
     }
   };
 }
