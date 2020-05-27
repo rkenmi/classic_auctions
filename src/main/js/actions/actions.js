@@ -2,7 +2,8 @@
  * action types
  */
 import { push } from 'connected-react-router'
-import {hideSuggestionItemsTooltip, normalizeNumber, normalizeParam} from '../helpers/searchHelpers';
+import {hideSuggestionItemsTooltip, normalizeNumber, normalizeParam, objectFlip} from '../helpers/searchHelpers';
+import {SORT_FIELDS, SORT_ORDERS} from '../helpers/constants';
 const client = require('../client');
 
 export const SET_REALMS = 'SET_REALMS';
@@ -12,6 +13,7 @@ export const SET_CURRENT_FACTION = 'SET_CURRENT_FACTION';
 export const SET_ERROR = 'SET_ERROR';
 export const TOGGLE_TODO = 'TOGGLE_TODO'
 export const LOAD_SPINNER = 'LOAD_SPINNER'
+export const ADD_SORT = 'ADD_SORT';
 export const SET_VISIBILITY_FILTER = 'SET_VISIBILITY_FILTER'
 export const PICK_SUGGESTION_EVENT = 'PICK_SUGGESTION_EVENT'
 export const ENTER_BTN_PRESSED_EVENT = 'ENTER_BTN_PRESSED_EVENT'
@@ -49,6 +51,10 @@ export function setCurrentFaction(currentFaction) {
 
 export function setError(title, message) {
   return { type: SET_ERROR, title, message }
+}
+
+export function addSort(field, order) {
+  return { type: ADD_SORT, field, order }
 }
 
 export function setSearchBarRef(ref) {
@@ -97,14 +103,20 @@ export function updatePageNum(page) {
   return { type: UPDATE_PAGE_NUM, page }
 }
 
-export function loadFromURL(query, page, currentRealm, currentFaction) {
+export function loadFromURL(query, page, currentRealm, currentFaction, sortField=null, sortFieldOrder=null) {
   return function(dispatch, getState) {
-    return Promise.all([
+    let promises = [
       dispatch(updateSearchQuery(query)),
       dispatch(updatePageNum(page)),
       dispatch(setCurrentRealm(currentRealm)),
       dispatch(setCurrentFaction(currentFaction))
-    ]).then(() => {
+    ];
+
+    if (objectFlip(SORT_FIELDS)[sortField] && objectFlip(SORT_ORDERS)[sortFieldOrder]){
+      promises.push(dispatch(addSort(sortField, sortFieldOrder)))
+    }
+
+    return Promise.all(promises).then(() => {
       // All done
       dispatch(search(page, query, false));
     }, (err) => {
@@ -113,6 +125,20 @@ export function loadFromURL(query, page, currentRealm, currentFaction) {
     });
   }
 }
+
+export function searchOnSetSort(field, order) {
+  return function(dispatch, getState) {
+    return Promise.all([
+      dispatch(addSort(field, order)),
+    ]).then(() => {
+      dispatch(search());
+    }, (err) => {
+      // Error
+      dispatch(setError("Error trying to search after sorting by " +  field + " and order " + order, err))
+    });
+  }
+}
+
 
 export function searchOnSetRealmAndFaction(currentRealm, currentFaction) {
   return function(dispatch, getState) {
@@ -171,7 +197,7 @@ export function search(pageNum=0, overrideQuery=null, pushHistory=true)  {
   // This gives the thunk function the ability to run some logic, and still interact with the store.
   return function(dispatch, getState) {
     const {pageReducer} = getState();
-    const {currentRealm, currentFaction} = pageReducer;
+    const {currentRealm, currentFaction, sort} = pageReducer;
     const query = overrideQuery === null ? pageReducer.query : overrideQuery;
 
     if (!searchIsValid(dispatch, query, currentRealm, currentFaction)) {
@@ -179,27 +205,43 @@ export function search(pageNum=0, overrideQuery=null, pushHistory=true)  {
     }
     const formattedRealm = currentRealm.replace(" ", "");
 
+    let p = normalizeNumber(pageNum),
+      q = normalizeParam(query),
+      r = normalizeParam(formattedRealm),
+      f = normalizeParam(currentFaction),
+      sp = convertSortParamsToURLParams(sort)
+    ;
+
     if (pushHistory) {
-      dispatch(push('/search?q=' + query + '&p=0&realm=' + formattedRealm + '&faction=' + currentFaction));
+      dispatch(push('/search?q=' + q + '&p=' + p + '&realm=' + r + '&faction=' + f + sp))
     }
     dispatch(loadSpinner());
     dispatch(setMobileNavExpanded(false));
-    return requestSearch(dispatch, pageNum, query, formattedRealm, currentFaction).then(
+    return requestSearch(p, q, r, f, sp).then(
       (done) => dispatch(updateSearchResults(done.entity)),
       (error) => dispatch(setError('Search failed', error)),
     );
   };
 }
 
-const requestSearch = (dispatch, pageNum=0, query, formattedRealm, currentFaction) => {
-  let p = normalizeNumber(pageNum),
-    q = normalizeParam(query),
-    r = normalizeParam(formattedRealm),
-    f = normalizeParam(currentFaction);
+export function convertSortParamsToURLParams(sortParams) {
+  if (Object.keys(sortParams).length === 0) {
+    return '';
+  }
 
+  let sortFieldParams = [];
+  let sortFieldOrderParams = [];
+
+  sortFieldParams.push(`&sortField=${sortParams.field}`);
+  sortFieldOrderParams.push(`&sortFieldOrder=${sortParams.order}`);
+
+  return sortFieldParams.join('') + sortFieldOrderParams.join('');
+}
+
+const requestSearch = (p=0, q, r, f, sp) => {
   return client({
     method: 'GET',
-    path: '/api/search?q=' + q + '&p=' + p + '&realm=' + r + '&faction=' + f
+    path: '/api/search?q=' + q + '&p=' + p + '&realm=' + r + '&faction=' + f + sp
   });
 };
 

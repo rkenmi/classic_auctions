@@ -1,4 +1,4 @@
-import {Button, Container, Modal, Spinner, Table} from 'react-bootstrap';
+import {Button, Dropdown, ButtonGroup, Container, DropdownButton, Modal, Spinner, Table} from 'react-bootstrap';
 import Item from '../Item';
 import MobileItem from '../MobileItem';
 import {Desktop, Mobile, Tablet} from '../../helpers/mediaTypes';
@@ -14,6 +14,9 @@ import {
   XAxis,
   YAxis
 } from 'recharts';
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {faArrowDown, faArrowUp} from '@fortawesome/free-solid-svg-icons';
+import {SORT_FIELDS, SORT_FIELDS_DISPLAY_NAMES, SORT_ORDERS} from '../../helpers/constants';
 
 const React = require('react');
 
@@ -72,14 +75,36 @@ export default class AuctionTable extends React.Component {
 
   getDesktopItems(items) {
     return items.map(features =>
-      <Item key={items.indexOf(features)} features={features} onClickGraph={this.onClickGraph.bind(this, features)}/>
+      <Item key={items.indexOf(features)} index={items.indexOf(features)} features={features} onClickGraph={this.onClickGraph.bind(this, features)}/>
     );
   }
 
   getMobileItems(items) {
     return items.map(features =>
-      <MobileItem key={items.indexOf(features)} features={features}/>
+      <MobileItem key={items.indexOf(features)} index={items.indexOf(features)} features={features} onClickGraph={this.onClickGraph.bind(this, features)}/>
     );
+  }
+
+  getColumnHeaderSortedTitle(field) {
+    const sort = this.props.sortFilter;
+    const matches = sort.field === field || (field === 'price' && ['bid', 'buyout'].includes(sort.field));
+    let fieldName = SORT_FIELDS_DISPLAY_NAMES[field];
+    if (sort.field && matches) {
+      fieldName = SORT_FIELDS_DISPLAY_NAMES[sort.field];
+    }
+
+    let SortIcon;
+    if (sort.order === SORT_ORDERS.ASCENDING && matches) {
+      SortIcon = <FontAwesomeIcon style={{width: 20}} color={'turquoise'} icon={faArrowUp}/>
+    } else if (sort.order ===SORT_ORDERS.DESCENDING && matches) {
+      SortIcon = <FontAwesomeIcon style={{width: 20}} color={'turquoise'} icon={faArrowDown}/>
+    } else {
+      SortIcon = <span style={{width: 20}}/>;
+    }
+
+    return (
+      <span>{fieldName} {SortIcon}</span>
+    )
   }
 
   render() {
@@ -113,29 +138,70 @@ export default class AuctionTable extends React.Component {
     }
 
     return (
-      <Table responsive striped bordered hover size="xs" variant={"dark"}>
-        <tbody>
-          {this.renderGraphModal()}
-          <Desktop>
+      <div>
+        <Desktop>
+          <Table responsive striped bordered hover size="xs" variant={"dark"}>
+            <tbody>
+            {this.renderGraphModal()}
             <tr>
-              <th>Qty</th>
-              <th>Name</th>
-              <th>Req</th>
-              <th>Price</th>
-              <th>Seller</th>
-              <th>Time Left</th>
-              <th>Trend</th>
+              <th style={{width: '5%', alignItems: 'center'}}>
+                <DropdownButton
+                  style={{display: 'flex'}}
+                  bsPrefix={'invis'}
+                  size={'sm'}
+                  id={'QtyDD'}
+                  variant={'info'}
+                  title={this.getColumnHeaderSortedTitle(SORT_FIELDS.QUANTITY)}
+                >
+                  <Dropdown.Header>Order by</Dropdown.Header>
+                  <Dropdown.Divider />
+                  <Dropdown.Item onClick={() => this.props.searchOnSort(SORT_FIELDS.QUANTITY, SORT_ORDERS.ASCENDING)}>Low to High</Dropdown.Item>
+                  <Dropdown.Item onClick={() => this.props.searchOnSort(SORT_FIELDS.QUANTITY, SORT_ORDERS.DESCENDING)}>High to Low</Dropdown.Item>
+                </DropdownButton>
+              </th>
+              <th style={{width: '30%'}}>Name</th>
+              <th style={{width: '5%'}}>Req</th>
+              <th style={{width: '30%', justifyContent: 'space-between', alignItems: 'center'}}>
+                <DropdownButton
+                  style={{display: 'flex'}}
+                  bsPrefix={'invis'}
+                  size={'sm'}
+                  id={`PriceDD`}
+                  variant={'info'}
+                  title={this.getColumnHeaderSortedTitle(SORT_FIELDS.PRICE)}>
+                  <Dropdown.Header>Order by</Dropdown.Header>
+                  <Dropdown.Divider />
+                  <Dropdown.Item onClick={() => this.props.searchOnSort(SORT_FIELDS.BUYOUT, SORT_ORDERS.ASCENDING)}>Buyout: Low to High</Dropdown.Item>
+                  <Dropdown.Item onClick={() => this.props.searchOnSort(SORT_FIELDS.BID, SORT_ORDERS.ASCENDING)} eventKey="2">Bid: Low to High</Dropdown.Item>
+                  <Dropdown.Item onClick={() => this.props.searchOnSort(SORT_FIELDS.BUYOUT, SORT_ORDERS.DESCENDING)}>Buyout: High to Low</Dropdown.Item>
+                  <Dropdown.Item onClick={() => this.props.searchOnSort(SORT_FIELDS.BID, SORT_ORDERS.DESCENDING)}>Bid: High to Low</Dropdown.Item>
+                </DropdownButton>
+              </th>
+              <th style={{width: '20%'}}>Seller</th>
+              <th style={{width: '10%'}}>Time Left</th>
             </tr>
             {this.getDesktopItems(items.slice(0, 15))}
-          </Desktop>
-          <Tablet>
-            {this.getMobileItems(items.slice(0, 15))}
-          </Tablet>
-          <Mobile>
-            {this.getMobileItems(items.slice(0, 15))}
-          </Mobile>
-        </tbody>
-      </Table>
+            </tbody>
+          </Table>
+        </Desktop>
+        <Mobile>
+          <div style={{color: '#fff', marginBottom: 10}}>
+            {this.renderGraphModal()}
+            <div style={{backgroundColor: '#343a40'}}>
+              {this.getMobileItems(items.slice(0, 15))}
+            </div>
+          </div>
+        </Mobile>
+        <Tablet>
+          <div style={{color: '#fff', marginBottom: 10}}>
+            <div style={{height: 25}}/>
+            {this.renderGraphModal()}
+            <div style={{backgroundColor: '#343a40'}}>
+              {this.getMobileItems(items.slice(0, 15))}
+            </div>
+          </div>
+        </Tablet>
+      </div>
     )
   }
 }

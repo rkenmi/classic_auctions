@@ -9,8 +9,8 @@ const React = require('react');
 export default class Item extends React.Component{
   renderMoney = (text, money) => {
     // For items with no buyout price
-    if (money === '0') {
-      return <td/>;
+    if (money == '0') {
+      return <td style={{border: 0}}/>;
     }
 
     return (
@@ -34,8 +34,17 @@ export default class Item extends React.Component{
   renderMoneyColumn = (bid, buyout) => {
     return (
       <td className={'align-middle'}>
-        {this.renderMoney('Bid:', bid)}
-        {this.renderMoney('Buyout:', buyout)}
+        <div style={{display: 'flex', justifyContent: 'space-between', flexDirection: 'row'}}>
+          <div style={{flex: 0.85}}>
+            {this.renderMoney('Bid:', bid)}
+            {this.renderMoney('Buyout:', buyout)}
+          </div>
+          <div style={{display: 'flex', flex: 0.15, justifyContent: 'flex-end', alignItems: 'center'}}>
+            <Button alt='Click to view market trend' size='sm' style={{height: 30}} variant={'info'} onClick={this.props.onClickGraph}>
+              <FontAwesomeIcon icon={faChartBar} />
+            </Button>
+          </div>
+        </div>
       </td>
     )
   };
@@ -44,7 +53,7 @@ export default class Item extends React.Component{
     return (
       <td className={'align-middle'}>
         <div style={{display: 'flex'}}>
-          <Button size='sm' variant={'outline-info'} onClick={this.props.onClickGraph}>
+          <Button size='sm' variant={'info'} onClick={this.props.onClickGraph}>
             <FontAwesomeIcon icon={faChartBar} />
           </Button>
         </div>
@@ -75,7 +84,6 @@ export default class Item extends React.Component{
         {this.renderMoneyColumn(bid, buyout)}
         <td className={'align-middle'}>{seller}</td>
         <td className={'align-middle'}>{TIME_REMAINING[timeRemaining-1]}</td>
-        {this.renderGraphColumn()}
       </tr>
     );
   }

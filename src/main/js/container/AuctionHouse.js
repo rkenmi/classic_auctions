@@ -12,20 +12,31 @@ import {
 import {Desktop, Mobile, Tablet} from '../helpers/mediaTypes';
 import {
   autocomplete,
-  getEmptyLabelString, keysPressed, pickSuggestion,
+  getEmptyLabelString,
+  keysPressed,
+  pickSuggestion,
   setCurrentFaction,
   setCurrentRealm,
   setError,
   search,
-  updateSearchQuery, setMobileNavExpanded, updatePageNum, loadFromURL, searchOnSetRealmAndFaction
+  updateSearchQuery,
+  setMobileNavExpanded,
+  updatePageNum,
+  loadFromURL,
+  searchOnSetRealmAndFaction,
+  searchOnSetSort,
+  convertSortParamsToURLParams
 } from '../actions/actions';
 import AHSearchForm from './AuctionHouseSearch';
 import moment from 'moment';
 import RealmDropdown from './widgets/RealmDropdown';
 import AuctionTable from './widgets/AuctionTable';
-import {getParamsFromURL, normalizeParam} from '../helpers/searchHelpers';
+import {capitalizeWord, getParamsFromURL, normalizeParam} from '../helpers/searchHelpers';
 import {MISC_URL} from '../helpers/endpoints';
 import {Logo} from '../helpers/domHelpers';
+import {SORT_FIELDS, SORT_FIELDS_DISPLAY_NAMES, SORT_ORDERS} from '../helpers/constants';
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {faArrowDown, faArrowUp} from '@fortawesome/free-solid-svg-icons';
 const ALLIANCE_ICON = MISC_URL + 'alliance_50.png';
 const HORDE_ICON = MISC_URL + 'horde_50.png';
 
@@ -69,57 +80,97 @@ class AuctionHouse extends React.Component{
   };
 
   getLastPage = () => {
-    return this.props.page + Math.floor((this.props.items.length-1) / 15)
+    return this.props.page + Math.ceil((this.props.count - 1) / 15)
   };
 
   getPagesRemaining = () => {
-    return Math.floor((this.props.items.length-1) / 15);
+    return Math.ceil((this.props.count - 1) / 15);
   };
 
-  getPagesBefore = () => {
-    return this.props.page;
-  };
+  renderByCondition(condition, dom, failDom=null) {
+    return condition ? dom : failDom;
+  }
+
+  renderFirstPageLink(page) {
+    return this.renderByCondition(page > 0,
+      <a className='pagination-item page-link' href={this.getPageHref(0)}>
+        <span aria-hidden="true">«</span>
+        <span className="sr-only">Previous</span>
+      </a>,
+      <span style={{width: '3em'}}/>
+    )
+  }
+
+  renderPreviousPageLink(page) {
+    return this.renderByCondition(page > 0,
+      <a className='pagination-item page-link' href={this.getPageHref(page-1)}>
+          <span aria-hidden="true">‹</span>
+          <span className="sr-only">Previous</span>
+      </a>,
+      <span style={{width: '3em'}}/>
+    )
+  }
+
+  renderLastPageLink(page) {
+    return this.renderByCondition(page < this.getLastPage(),
+      <a className='pagination-item page-link' href={this.getPageHref(this.getLastPage())}>
+        <span aria-hidden="true">»</span>
+        <span className="sr-only">Last</span>
+      </a>,
+      <span style={{width: '3em'}}/>
+    )
+  }
+
+  renderNextPageLink(page) {
+    return this.renderByCondition(page < this.getLastPage(),
+      <a className='pagination-item page-link' href={this.getPageHref(page+1)}>
+        <span aria-hidden="true">›</span>
+        <span className="sr-only">Next</span>
+      </a>,
+      <span style={{width: '3em'}}/>
+    )
+  }
+
+  getMobileSortedDropdownTitle() {
+    const sort = this.props.sort;
+    let fieldName = sort.field ? capitalizeWord(sort.field) : 'Order by';
+
+    let SortIcon;
+    if (sort.order === SORT_ORDERS.ASCENDING) {
+      SortIcon = <FontAwesomeIcon style={{width: 20}} color={'blue'} icon={faArrowUp}/>
+    } else if (sort.order ===SORT_ORDERS.DESCENDING) {
+      SortIcon = <FontAwesomeIcon style={{width: 20}} color={'red'} icon={faArrowDown}/>
+    } else {
+      SortIcon = <span style={{width: 20}}/>;
+    }
+
+    return (
+      <span>{fieldName} {SortIcon}</span>
+    )
+  }
 
   getPageHref = (p) => {
-    const {query, currentFaction, currentRealm} = this.props;
+    const {query, currentFaction, currentRealm, sort} = this.props;
     const q = normalizeParam(query), f = normalizeParam(currentFaction), r = normalizeParam(currentRealm).replace(" ", "");
-    return '/search?q=' + q + '&p=' + p + '&realm=' + r + '&faction=' + f;
+    const sp = convertSortParamsToURLParams(sort);
+    return '/search?q=' + q + '&p=' + p + '&realm=' + r + '&faction=' + f + sp;
   };
+
 
   renderPagination = () => {
     const {page} = this.props;
 
     return (
       <Pagination style={{flex: 1, justifyContent: 'center'}}>
-        <Pagination.First className={'pagination-item'} onClick={() => this.goToPage(0)}/>
-        <Pagination.Prev className={'pagination-item'} onClick={() => this.goToPage(page-1)}/>
-        {page > 1 ?
-              <a className='pagination-item page-link' href={this.getPageHref(page-2)}>
-                  {page - 1}
-              </a>
-          : null
-        }
-        {page > 0 ?
-            <a className='pagination-item page-link' href={this.getPageHref(page-1)}>
-              {page}
-            </a>
-          : null
-        }
+        {this.renderFirstPageLink(page)}
+        {this.renderPreviousPageLink(page)}
+        {this.renderByCondition(page > 1, <a className='pagination-item page-link' href={this.getPageHref(page-2)}>{page - 1}</a>)}
+        {this.renderByCondition(page > 0, <a className='pagination-item page-link' href={this.getPageHref(page-1)}>{page}</a>)}
         <Pagination.Item className={'pagination-item current'}>{page + 1}</Pagination.Item>
-        {this.getPagesRemaining() > 0 ?
-            <a className='pagination-item page-link' href={this.getPageHref(page+1)}>
-              {page+2}
-            </a>
-          : null
-        }
-        {this.getPagesRemaining() > 1 ?
-            <a className='pagination-item page-link' href={this.getPageHref(page+2)}>
-              {page+3}
-            </a>
-          : null
-        }
-        <Pagination.Next className={'pagination-item'} onClick={() => this.goToPage(page + 1)}/>
-        <Pagination.Last className={'pagination-item'} onClick={() => this.goToPage(this.getLastPage())} />
+        {this.renderByCondition(this.getPagesRemaining() > 0, <a className='pagination-item page-link' href={this.getPageHref(page+1)}>{page+2}</a>)}
+        {this.renderByCondition(this.getPagesRemaining() > 1, <a className='pagination-item page-link' href={this.getPageHref(page+2)}>{page+3}</a>)}
+        {this.renderNextPageLink(page)}
+        {this.renderLastPageLink(page)}
       </Pagination>
     )
   };
@@ -157,7 +208,7 @@ class AuctionHouse extends React.Component{
     const {mobileNavExpanded, currentRealm, currentFaction} = this.props;
     return (
       <div style={{display: 'flex', flexDirection: 'column', marginTop: 75}}>
-        <Navbar fixed={'top'} style={{display: 'flex'}} bg={'dark'} variant={'dark'} expand={'lg'}
+        <Navbar ref={(ref) => {this.navbarRef = ref}} fixed={'top'} style={{display: 'flex'}} bg={'dark'} variant={'dark'} expand={'lg'}
                 onToggle={()=> {this.props.setMobileNavExpanded(!mobileNavExpanded)} }
                 expanded={this.props.mobileNavExpanded}>
           <Navbar.Brand>
@@ -180,6 +231,22 @@ class AuctionHouse extends React.Component{
                              onSelectRealm={this.props.setCurrentRealm}
                              onSelectFaction={this.props.setCurrentFaction}
                              realms={realms}/>
+              <DropdownButton
+                style={{display: 'flex', marginLeft: 15}}
+                id={'MobileSortDD'}
+                variant={'info'}
+                title={this.getMobileSortedDropdownTitle()}
+              >
+                <Dropdown.Header>Order by</Dropdown.Header>
+                <Dropdown.Divider />
+                <Dropdown.Item onClick={() => this.props.searchOnSort(SORT_FIELDS.QUANTITY, SORT_ORDERS.ASCENDING)}>Quantity: Low to High</Dropdown.Item>
+                <Dropdown.Item onClick={() => this.props.searchOnSort(SORT_FIELDS.QUANTITY, SORT_ORDERS.DESCENDING)}>Quantity: High to Low</Dropdown.Item>
+                <Dropdown.Divider />
+                <Dropdown.Item onClick={() => this.props.searchOnSort(SORT_FIELDS.BUYOUT, SORT_ORDERS.ASCENDING)}>Buyout: Low to High</Dropdown.Item>
+                <Dropdown.Item onClick={() => this.props.searchOnSort(SORT_FIELDS.BID, SORT_ORDERS.ASCENDING)} eventKey="2">Bid: Low to High</Dropdown.Item>
+                <Dropdown.Item onClick={() => this.props.searchOnSort(SORT_FIELDS.BUYOUT, SORT_ORDERS.DESCENDING)}>Buyout: High to Low</Dropdown.Item>
+                <Dropdown.Item onClick={() => this.props.searchOnSort(SORT_FIELDS.BID, SORT_ORDERS.DESCENDING)}>Bid: High to Low</Dropdown.Item>
+              </DropdownButton>
             </div>
           </Navbar.Collapse>
         </Navbar>
@@ -223,7 +290,7 @@ class AuctionHouse extends React.Component{
             <Modal.Body>{this.props.errorMessage}</Modal.Body>
           </Modal.Header>
         </Modal>
-        <AuctionTable hasSearched={this.props.hasSearched} items={items}/>
+        <AuctionTable loading={loading} hasSearched={this.props.hasSearched} items={items} sortFilter={this.props.sort} searchOnSort={this.props.searchOnSort}/>
         {!loading && items.length > 0 ? this.renderFooter() : null}
       </Container>
     )
@@ -236,9 +303,11 @@ function mapStateToProps(state) {
     loading: state.pageReducer.loading,
     hasSearched: state.pageReducer.hasSearched,
     queryMs: state.pageReducer.queryMs,
+    sort: state.pageReducer.sort,
     page: state.pageReducer.page,
     realms: state.pageReducer.realms,
     items: state.pageReducer.items,
+    count: state.pageReducer.count,
     query: state.pageReducer.query,
     suggestions: state.pageReducer.suggestions,
     currentRealm: state.pageReducer.currentRealm,
@@ -259,6 +328,9 @@ function mapDispatchToProps(dispatch) {
     },
     setCurrentFaction: (faction) => {
       dispatch(setCurrentFaction(faction));
+    },
+    searchOnSort: (field, order) => {
+      dispatch(searchOnSetSort(field, order));
     },
     getEmptyLabelString: () => {
       dispatch(getEmptyLabelString())
@@ -287,8 +359,8 @@ function mapDispatchToProps(dispatch) {
     setError: (title, message) => {
       dispatch(setError(title, message));
     },
-    loadFromURLParams: (query, page, currentRealm, currentFaction) => {
-      dispatch(loadFromURL(query, page, currentRealm, currentFaction));
+    loadFromURLParams: (query, page, currentRealm, currentFaction, sortField, sortFieldOrder) => {
+      dispatch(loadFromURL(query, page, currentRealm, currentFaction, sortField, sortFieldOrder));
     }
   }
 }

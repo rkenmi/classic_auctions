@@ -9,10 +9,17 @@ import {
   SET_SEARCH_BAR_REF,
   UPDATE_SEARCH_RESULTS,
   UPDATE_SEARCH_SUGGESTIONS,
-  UPDATE_SEARCH_QUERY, SET_CURRENT_REALM, SET_CURRENT_FACTION, LOAD_SPINNER, MOBILE_NAV_EXPANDED, UPDATE_PAGE_NUM
+  UPDATE_SEARCH_QUERY,
+  SET_CURRENT_REALM,
+  SET_CURRENT_FACTION,
+  LOAD_SPINNER,
+  MOBILE_NAV_EXPANDED,
+  UPDATE_PAGE_NUM,
+  ADD_SORT
 } from '../actions/actions'
 const { SHOW_ALL } = VisibilityFilters;
 import { connectRouter } from 'connected-react-router'
+import {SORT_FIELDS, SORT_ORDERS} from '../helpers/constants';
 
 function visibilityReducer(state = SHOW_ALL, action) {
   switch (action.type) {
@@ -28,7 +35,9 @@ function visibilityReducer(state = SHOW_ALL, action) {
   }
 }
 
-function pageReducer(state = {suggestions: [], items: [], hasSearched: false, query: '', loading: false, mobileNavExpanded: false}, action) {
+function pageReducer(state = {count: 0, suggestions: [], items: [], hasSearched: false, query: '', loading: false,
+  sort: {}, mobileNavExpanded: false}, action)
+{
   switch (action.type) {
     case SET_REALMS:
       return {
@@ -36,10 +45,11 @@ function pageReducer(state = {suggestions: [], items: [], hasSearched: false, qu
         realms: action.realms
       };
     case UPDATE_SEARCH_RESULTS:
-      const {items, page, queryMs} = action.results;
+      const {items, page, queryMs, count} = action.results;
       return {
         ...state,
         items,
+        count,
         page,
         queryMs,
         loading: false,
@@ -64,6 +74,14 @@ function pageReducer(state = {suggestions: [], items: [], hasSearched: false, qu
       return {
         ...state,
         currentFaction: action.currentFaction
+      };
+    case ADD_SORT:
+      return {
+        ...state,
+        sort: {...state.sort,
+          field: action.field,
+          order: action.order
+        }
       };
     case UPDATE_PAGE_NUM:
       return {

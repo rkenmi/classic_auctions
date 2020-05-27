@@ -9,13 +9,26 @@ export const normalizeNumber = (n) => {
   return num >= 0 ? num : 0;
 };
 
+export const capitalizeWord = (s) => {
+  return s[0].toUpperCase() + s.substring(1, s.length);
+};
+
+export const objectFlip = (obj) => {
+  return Object.keys(obj).reduce((ret, key) => {
+    ret[obj[key]] = key;
+    return ret;
+  }, {});
+};
+
 export function getParamsFromURL(search) {
   const query = qs.parse(search, { ignoreQueryPrefix: true }).q;
   const page = qs.parse(search, { ignoreQueryPrefix: true }).p;
   const currentRealm = qs.parse(search, { ignoreQueryPrefix: true }).realm;
   const currentFaction = qs.parse(search, { ignoreQueryPrefix: true }).faction;
+  const sortField = qs.parse(search, { ignoreQueryPrefix: true }).sortField;
+  const sortFieldOrder = parseInt(qs.parse(search, { ignoreQueryPrefix: true }).sortFieldOrder);
 
-  return [query, page, currentRealm, currentFaction];
+  return [query, page, currentRealm, currentFaction, sortField, sortFieldOrder];
 }
 
 export function hideSuggestionItemsTooltip() {
