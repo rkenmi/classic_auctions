@@ -6,6 +6,7 @@ module.exports = {
     entry: [
         './src/main/js/index.js',
         './src/main/resources/static/main.css', // this is just so that webpack-dev-server can detect css properly
+        './src/main/resources/static/fonts.css', // this is just so that webpack-dev-server can detect css properly
     ],
     devtool: 'inline-source-map',
     cache: true,

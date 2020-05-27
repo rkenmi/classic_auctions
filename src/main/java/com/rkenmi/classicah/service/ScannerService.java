@@ -121,10 +121,10 @@ public class ScannerService {
                     Item item = Item.builder()
                             .id(Integer.parseInt(itemFeatureMatcher.group(2)))
                             .itemName(itemFeatureMatcher.group(3))
-                            .bid(itemFeatureMatcher.group(5))
+                            .bid(Long.parseLong(itemFeatureMatcher.group(5)))
                             .timeRemaining(Integer.parseInt(itemFeatureMatcher.group(6)))
                             .quantity(Integer.parseInt(itemFeatureMatcher.group(7)))
-                            .buyout(itemFeatureMatcher.group(9))
+                            .buyout(Long.parseLong(itemFeatureMatcher.group(9)))
                             .seller(itemFeatureMatcher.group(10))
                             .timestamp(new Date())
                             .suggest(

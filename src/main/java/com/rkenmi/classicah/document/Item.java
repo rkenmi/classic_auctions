@@ -11,7 +11,7 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 
 @Builder
 @Getter
@@ -22,8 +22,8 @@ import java.util.Map;
 public class Item implements Serializable {
     private Integer id;
     private String itemName;
-    private String bid;
-    private String buyout;
+    private Long bid;
+    private Long buyout;
     private String seller;
     private Integer timeRemaining;
     private Integer quantity;
@@ -31,4 +31,17 @@ public class Item implements Serializable {
     private List<String> suggest;
 
     private MetaItem metaItem;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Item item = (Item) o;
+        return id == item.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }
