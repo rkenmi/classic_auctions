@@ -1,17 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Raleway&display=swap');
 
-h1 {
-    font-size: 64px;
-}
-
-h2 {
-    font-size: 48px;
-}
-
-h1 > span, h2 > span, h3 > span{
-    color: turquoise;
-}
-
 h1,h2,h3,h4 {
     margin-bottom: 0;
     font-family: 'Raleway', Verdana, serif;
