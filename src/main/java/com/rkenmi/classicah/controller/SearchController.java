@@ -15,6 +15,8 @@
  */
 package com.rkenmi.classicah.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.rkenmi.classicah.document.Item;
@@ -25,13 +27,18 @@ import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.core.CountRequest;
+import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.search.suggest.Suggest;
 import org.elasticsearch.search.suggest.SuggestBuilder;
 import org.elasticsearch.search.suggest.SuggestBuilders;
@@ -48,8 +55,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.rkenmi.classicah.data.SupportedRealms.US_WEST;
@@ -84,7 +93,7 @@ public class SearchController {
 		SuggestionBuilder suggestionBuilder = SuggestBuilders
 				.completionSuggestion("suggest")
 				.prefix(normalizeQuery(query))
-				.skipDuplicates(true)
+				.skipDuplicates(true) // doesn't seem to work reliably due to the way the tokens are generated
 				.size(5);
 
 		SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
@@ -95,6 +104,7 @@ public class SearchController {
 		searchRequest.source(sourceBuilder);
 
 		List<Map<String, Object>> suggestions = new ArrayList<>();
+		Set<Integer> suggestionsSeen = new HashSet<>();
 
 		try {
 			SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
@@ -110,6 +120,11 @@ public class SearchController {
 					} catch (ClassCastException e) {
 						id = Integer.parseInt((String) sourceMap.get("id"));
 					}
+
+					if (suggestionsSeen.contains(id)) {
+						continue;
+					}
+
 					MetaItem metaItem = metaItemService.getItem(id);
 					resultsMap.put("quality", metaItem.getQuality());
 					resultsMap.put("icon", metaItem.getIcon());
@@ -117,14 +132,14 @@ public class SearchController {
 					resultsMap.put("itemName", sourceMap.get("itemName"));
 					resultsMap.put("timestamp", sourceMap.get("timestamp"));
 					resultsMap.put("id", sourceMap.get("id"));
-//					String suggestText = option.getText().string();
 					suggestions.add(resultsMap);
+					suggestionsSeen.add(id);
 				}
 			}
 		} catch (ElasticsearchStatusException e) {
-			if (e.status().equals(RestStatus.NOT_FOUND)) {
-				log.error("Index not found!");
-			}
+			log.error(e);
+		} catch (ResponseException e) {
+			log.error("Error retrieving search response: ", e);
 		} catch (IOException e) {
 			log.error("Error with search request: ", e);
 		}
@@ -132,34 +147,85 @@ public class SearchController {
 		return suggestions;
 	}
 
-    @Cacheable(value="popularQueries", key="{#query + #page + #realm + #faction}")
+	@Cacheable(value="count", key="{#query + #realm + #faction}")
+	public Long getCount(
+			@RequestParam("q") String query,
+			@RequestParam(name = "realm") String realm,
+			@RequestParam(name = "faction") String faction
+	) {
+		QueryBuilder queryBuilder = QueryBuilders.matchPhrasePrefixQuery("itemName", normalizeQuery(query).toLowerCase());
+		CountRequest countRequest = new CountRequest();
+		countRequest.indices(String.format("ah_item_%s_%s", realm.toLowerCase(), faction.toLowerCase()));
+		countRequest.source(new SearchSourceBuilder().query(queryBuilder));
+
+		long count = 0;
+		try {
+            CountResponse countResponse = client.count(countRequest, RequestOptions.DEFAULT);
+            count = countResponse.getCount();
+			log.debug("Found {} search hits for [{}/{}] {}", count, realm, faction, query);
+		} catch (ElasticsearchStatusException e) {
+			log.error(e);
+		} catch (ResponseException e) {
+			log.error("Error retrieving count: ", e);
+		} catch (IOException e) {
+			log.error("Error with count request: ", e);
+		}
+
+		return count;
+	}
+
+	private void addSort(SearchSourceBuilder sourceBuilder, String sortField, Integer sortFieldOrder) {
+		SortOrder[] sortOrders = {null, SortOrder.DESC, SortOrder.ASC};
+
+        SortOrder sortOrder = sortOrders[sortFieldOrder];
+        if (sortOrder == null) {
+            return;
+        }
+
+        FieldSortBuilder fieldSortBuilder =  SortBuilders
+                .fieldSort(sortField)
+                .order(sortOrder);
+
+        sourceBuilder.sort(fieldSortBuilder);
+	}
+
+    @Cacheable(value="popularQueries", key="{#query + #page + #realm + #faction + #pageSize + #sortField + #sortFieldOrder}")
 	@GetMapping(value = "/api/search")
     public Map<String, Object> searchData(
     		@RequestParam("q") String query,
 			@RequestParam(name = "p", defaultValue = "0") Integer page,
 			@RequestParam(name = "realm") String realm,
-			@RequestParam(name = "faction") String faction
+			@RequestParam(name = "faction") String faction,
+			@RequestParam(name = "pS", defaultValue = "15") Integer pageSize,
+			@RequestParam(name = "sortField", required = false) String sortField,
+			@RequestParam(name = "sortFieldOrder", required = false) Integer sortFieldOrder
 	) {
 		Instant startQueryTime = Instant.now();
 		QueryBuilder queryBuilder = QueryBuilders.matchPhrasePrefixQuery("itemName", normalizeQuery(query).toLowerCase());
 
 		SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
 		sourceBuilder.query(queryBuilder);
-		sourceBuilder.from(page * 15);  // each page has 15 results on the front-end
-		sourceBuilder.size(90);
-		sourceBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
+		sourceBuilder.from(page * pageSize);  // each page has 15 results on the front-end
+		sourceBuilder.size(pageSize);
+		sourceBuilder.timeout(new TimeValue(30, TimeUnit.SECONDS));
 
 		SearchRequest searchRequest = new SearchRequest();
 		searchRequest.indices(String.format("ah_item_%s_%s", realm.toLowerCase(), faction.toLowerCase()));
 		searchRequest.source(sourceBuilder);
 
+		if (sortField != null && sortFieldOrder != null) {
+			addSort(sourceBuilder, sortField, sortFieldOrder);
+		}
+
 		List<Item> items = new ArrayList<>();
-		Long queryMs;
+		long count = 0;
+		final Long queryMs;
 		try {
 			SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
 			log.debug("Status of search: {}", searchResponse.status());
 			SearchHit[] searchHits = searchResponse.getHits().getHits();
 			if (searchHits.length > 0) {
+				count = getCount(query, realm, faction) - searchHits.length - (page * pageSize);
 				Arrays.stream(searchHits)
 						.map(hit -> objectMapper.convertValue(hit.getSourceAsMap(), Item.class))
 						.forEach(item -> {
@@ -168,11 +234,11 @@ public class SearchController {
 							items.add(item);
 						});
 			}
-			log.info("Returning {} search hits", searchHits.length);
+			log.debug("Returning {} search hits", searchHits.length);
 		} catch (ElasticsearchStatusException e) {
-			if (e.status().equals(RestStatus.NOT_FOUND)) {
-				log.error("Index not found!");
-			}
+			log.error(e);
+		} catch (ResponseException e) {
+			log.error("Error retrieving search response: ", e);
 		} catch (IOException e) {
 			log.error("Error with search request: ", e);
 		} finally {
@@ -180,7 +246,7 @@ public class SearchController {
 			queryMs = endQueryTime.toEpochMilli() - startQueryTime.toEpochMilli();
 		}
 
-		return ImmutableMap.of("items", items, "page", page, "queryMs", queryMs);
+		return ImmutableMap.of("items", items, "page", page, "count", count, "queryMs", queryMs);
 	}
 
 	@GetMapping(value = "/api/getRealms")
