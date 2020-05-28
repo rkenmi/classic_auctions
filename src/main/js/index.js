@@ -8,17 +8,25 @@ import AuctionHouseWrapper from './container/AuctionHouseWrapper';
 import Error from './container/Error';
 import { ConnectedRouter } from 'connected-react-router'
 import {history} from './createStore';
+import PrivacyPolicy from './container/PrivacyPolicy';
+import About from './container/About';
+import Footer from './container/Footer';
 
 const store = configureStore();
 ReactDOM.render(
   <Provider store={store}>
       <ConnectedRouter history={history}>
-        <Switch>
-          <Route path="/search" exact component={AuctionHouseWrapper} />
-          <Route path="/" exact component={Home} />
-          {/*Fallback route*/}
-          <Route component={Error} />
-        </Switch>
+        <div style={{position: 'relative', minHeight: '85vh'}}>
+          <Switch>
+            <Route path="/search" exact component={AuctionHouseWrapper} />
+            <Route path="/" exact component={Home} />
+            <Route path="/privacy" exact component={PrivacyPolicy} />
+            <Route path="/about" exact component={About} />
+            {/*Fallback route*/}
+            <Route component={Error} />
+          </Switch>
+          <Route component={Footer}/>
+        </div>
       </ConnectedRouter>
   </Provider>,
   document.getElementById('react')

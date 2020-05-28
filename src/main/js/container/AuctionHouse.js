@@ -37,6 +37,8 @@ import {Logo} from '../helpers/domHelpers';
 import {SORT_FIELDS, SORT_FIELDS_DISPLAY_NAMES, SORT_ORDERS} from '../helpers/constants';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faArrowDown, faArrowUp} from '@fortawesome/free-solid-svg-icons';
+import Footer from './Footer';
+import AuctionPagination from './widgets/AuctionPagination';
 const ALLIANCE_ICON = MISC_URL + 'alliance_50.png';
 const HORDE_ICON = MISC_URL + 'horde_50.png';
 
@@ -149,7 +151,7 @@ class AuctionHouse extends React.Component{
     )
   }
 
-  getPageHref = (p) => {
+  getPageHref(p) {
     const {query, currentFaction, currentRealm, sort} = this.props;
     const q = normalizeParam(query), f = normalizeParam(currentFaction), r = normalizeParam(currentRealm).replace(" ", "");
     const sp = convertSortParamsToURLParams(sort);
@@ -259,16 +261,9 @@ class AuctionHouse extends React.Component{
       return;
     }
 
-    // ES documents have seconds as timestamp
-    const dateStr = moment(new Date(this.props.items[0].timestamp)).fromNow();
-
     return (
       <div>
         {this.renderPagination()}
-        <Container style={{display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBottom: 25}}>
-          <div style={{color: '#fff', fontSize: 10}}>Last data refresh: {dateStr}</div>
-          <div style={{color: '#fff', fontSize: 10}}>Query response time: {this.props.queryMs} ms</div>
-        </Container>
       </div>
     )
   }
@@ -278,7 +273,7 @@ class AuctionHouse extends React.Component{
   };
 
   render() {
-    const {loading, items} = this.props;
+    const {loading, items, page, count} = this.props;
 
     return (
       <Container style={{display: 'flex', flexDirection: 'column'}}>
@@ -290,8 +285,8 @@ class AuctionHouse extends React.Component{
             <Modal.Body>{this.props.errorMessage}</Modal.Body>
           </Modal.Header>
         </Modal>
-        <AuctionTable loading={loading} hasSearched={this.props.hasSearched} items={items} sortFilter={this.props.sort} searchOnSort={this.props.searchOnSort}/>
-        {!loading && items.length > 0 ? this.renderFooter() : null}
+        <AuctionTable loading={loading} page={page} hasSearched={this.props.hasSearched} items={items} sortFilter={this.props.sort} searchOnSort={this.props.searchOnSort}/>
+        <AuctionPagination count={count} items={items} loading={loading} page={page} getPageHref={this.getPageHref.bind(this)}/>
       </Container>
     )
   }

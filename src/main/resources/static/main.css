@@ -4,6 +4,10 @@ table {
     border-collapse: collapse;
 }
 
+#ah-footer > * {
+    color: turquoise;
+}
+
 body {
     background-color: #263238;
 }

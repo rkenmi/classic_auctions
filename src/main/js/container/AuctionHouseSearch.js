@@ -127,11 +127,24 @@ class AuctionHouseSearch extends React.Component {
       return this.getTypeahead();
     }
 
+    let button = <Button style={{marginLeft: 10}} variant="outline-info"
+                         onClick={() => this.props.onSearch()}>Search</Button>;
+    if (this.props.useIconAsButton) {
+      button = <Button onClick={() => {this.props.onSearch()}}>
+          <FontAwesomeIcon icon={faSearch} inverse/>
+        </Button>
+    }
+
+    let formWidth = {};
+    if (this.props.formWidth) {
+      formWidth['width'] = this.props.formWidth;
+    }
+
     return (
-      <Form inline onSubmit={this.props.onSearch} style={{flex: 1, justifyContent: 'flex-start'}}>
+      <Form inline onSubmit={this.props.onSearch} style={{flex: 1, justifyContent: 'flex-start', ...formWidth}}>
         <Desktop>
           {this.getTypeahead()}
-          <Button style={{marginLeft: 10}} variant="outline-info" onClick={() => this.props.onSearch()}>Search</Button>
+          {button}
         </Desktop>
         <Mobile>
           {this.renderMobileOrTablet()}

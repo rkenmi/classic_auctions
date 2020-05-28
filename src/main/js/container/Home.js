@@ -23,7 +23,6 @@ const React = require('react');
 const client = require('../client');
 import AHSearchForm from './AuctionHouseSearch';
 import RealmDropdown from './widgets/RealmDropdown';
-import {withRouter} from 'react-router-dom';
 import {Logo} from '../helpers/domHelpers';
 class Home extends React.Component {
   constructor(props) {
@@ -47,8 +46,14 @@ class Home extends React.Component {
 		const {currentRealm, currentFaction} = this.props;
 
 	  return (
-			<Container style={{flex: 1, justifyContent: 'flex-end'}}>
-				<Row style={{marginTop: '15%', marginBottom: 30, justifyContent: 'center'}}>
+			<Container style={{
+				justifyContent: 'center',
+				alignItems: 'center',
+				display: 'flex',
+				height: '70vh',
+				flexDirection: 'column'
+			}}>
+				<Row style={{marginBottom: 30, justifyContent: 'center'}}>
 					<Logo isHomePage={true}/>
 				</Row>
 				<Row style={{display: 'flex', justifyContent: 'center', marginBottom: 20}}>
@@ -60,6 +65,7 @@ class Home extends React.Component {
 													 onSelectFaction={this.props.setCurrentFaction}
 													 realms={realms}/>
 						<AHSearchForm
+              formWidth={600}
 							onSearch={this.props.onSearchFromHome}
 							onChange={this.props.onPickSuggestionFromHome}
 							onKeyDown={this.props.onKeyPressedFromHome}
@@ -82,7 +88,8 @@ class Home extends React.Component {
 
 	render() {
 		return (
-		  <div>
+		  <div style={{
+			}}>
 				<Desktop>{this.renderDesktopView()}</Desktop>
 				<Tablet>{this.renderMobileView()}</Tablet>
 				<Mobile>{this.renderMobileView()}</Mobile>
