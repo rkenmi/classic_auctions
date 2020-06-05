@@ -25,7 +25,7 @@ import {
   loadFromURL,
   searchOnSetRealmAndFaction,
   searchOnSetSort,
-  convertSortParamsToURLParams
+  convertSortParamsToURLParams, getMarketpriceData, hideGraphModal
 } from '../actions/actions';
 import AHSearchForm from './AuctionHouseSearch';
 import moment from 'moment';
@@ -273,7 +273,7 @@ class AuctionHouse extends React.Component{
   };
 
   render() {
-    const {loading, items, page, count} = this.props;
+    const {loading, items, page, count, graph} = this.props;
 
     return (
       <Container style={{display: 'flex', flexDirection: 'column'}}>
@@ -285,7 +285,17 @@ class AuctionHouse extends React.Component{
             <Modal.Body>{this.props.errorMessage}</Modal.Body>
           </Modal.Header>
         </Modal>
-        <AuctionTable loading={loading} page={page} hasSearched={this.props.hasSearched} items={items} sortFilter={this.props.sort} searchOnSort={this.props.searchOnSort}/>
+        <AuctionTable
+          loading={loading}
+          page={page}
+          hasSearched={this.props.hasSearched}
+          items={items}
+          graph={graph}
+          onClickGraph={this.props.clickGraph}
+          onCloseModal={this.props.hideGraph}
+          sortFilter={this.props.sort}
+          searchOnSort={this.props.searchOnSort}
+        />
         <AuctionPagination count={count} items={items} loading={loading} page={page} getPageHref={this.getPageHref.bind(this)}/>
       </Container>
     )
@@ -296,6 +306,7 @@ function mapStateToProps(state) {
   return {
     searchBarRef: state.visibilityReducer.searchBarRef,
     loading: state.pageReducer.loading,
+    graph: state.pageReducer.graph,
     hasSearched: state.pageReducer.hasSearched,
     queryMs: state.pageReducer.queryMs,
     sort: state.pageReducer.sort,
@@ -326,6 +337,12 @@ function mapDispatchToProps(dispatch) {
     },
     searchOnSort: (field, order) => {
       dispatch(searchOnSetSort(field, order));
+    },
+    clickGraph: (itemId, timestamp) => {
+      dispatch(getMarketpriceData(itemId, 0));
+    },
+    hideGraph: () => {
+      dispatch(hideGraphModal());
     },
     getEmptyLabelString: () => {
       dispatch(getEmptyLabelString())

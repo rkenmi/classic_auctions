@@ -18,9 +18,13 @@ package com.rkenmi.classicah.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.rkenmi.classicah.document.Item;
+import com.rkenmi.classicah.model.Marketprice;
 import com.rkenmi.classicah.model.MetaItem;
+import com.rkenmi.classicah.repositories.MarketpriceRepository;
 import com.rkenmi.classicah.service.MetaItemService;
 import lombok.extern.log4j.Log4j2;
 import org.elasticsearch.ElasticsearchStatusException;
@@ -52,14 +56,23 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.rkenmi.classicah.data.SupportedRealms.US_WEST;
 
@@ -72,16 +85,91 @@ public class SearchController {
     private RestHighLevelClient client;
     private ObjectMapper objectMapper = new ObjectMapper();
     private MetaItemService metaItemService;
+    private MarketpriceRepository marketpriceRepository;
+
+    private final static Set<String> SUPPORTED_FACTIONS = ImmutableSet.of("horde", "alliance");
+	private final static Set<String> SUPPORTED_REALMS = new HashSet<>(
+			US_WEST.stream().map(String::toLowerCase).collect(Collectors.toList())
+	);
+	private final static Set<String> SUPPORTED_FIELDS = ImmutableSet.of(
+			"quantity", "bid", "buyout"
+	);
 
 	@Autowired
-    public SearchController(RestHighLevelClient client, MetaItemService metaItemService) {
+    public SearchController(RestHighLevelClient client, MetaItemService metaItemService, MarketpriceRepository marketpriceRepository) {
     	this.client = client;
     	this.metaItemService = metaItemService;
+		this.marketpriceRepository = marketpriceRepository;
 	}
 
 	private String normalizeQuery(final String q) {
 		return q.replaceAll("[\\\\/:*?\"<>|{}\\[\\]]", "");
 	}
+
+	public static Calendar convertToGmt(Calendar cal) {
+
+		Date date = cal.getTime();
+		TimeZone tz = cal.getTimeZone();
+
+		log.debug("input calendar has date [" + date + "]");
+
+		//Returns the number of milliseconds since January 1, 1970, 00:00:00 GMT
+		long msFromEpochGmt = date.getTime();
+
+		//gives you the current offset in ms from GMT at the current date
+		int offsetFromUTC = tz.getOffset(msFromEpochGmt);
+		log.debug("offset is " + offsetFromUTC);
+
+		//create a new calendar in GMT timezone, set to this date and add the offset
+		Calendar gmtCal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+		gmtCal.setTime(date);
+		gmtCal.add(Calendar.MILLISECOND, offsetFromUTC);
+
+		log.debug("Created GMT cal with date [" + gmtCal.getTime() + "]");
+
+		return gmtCal;
+	}
+
+	private boolean isParametersValid(String realm, String faction) {
+	    boolean valid = SUPPORTED_REALMS.contains(realm.toLowerCase()) && SUPPORTED_FACTIONS.contains(faction.toLowerCase());
+	    if (!valid) {
+			log.error(String.format("Invalid parameters: %s %s", realm, faction));
+		}
+        return valid;
+	}
+
+	@Cacheable(value="marketprice", key="{#itemId + #realm + #faction + #timespan}")
+	@GetMapping(value = "/api/marketprice")
+	public List<Marketprice> marketpriceList(
+			@RequestParam("itemId") Integer itemId,
+			@RequestParam(name = "timespan") Integer timespan,
+			@RequestParam(name = "realm") String realm,
+			@RequestParam(name = "faction") String faction
+	) {
+		if (!isParametersValid(realm, faction)) {
+			return Collections.emptyList();
+		}
+
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+		if (timespan == 2) {
+			calendar.add(Calendar.MONTH, -1);
+		} else if (timespan== 1) {
+			calendar.add(Calendar.WEEK_OF_MONTH, -1);
+		} else if (timespan == 0) {
+			calendar.add(Calendar.HOUR_OF_DAY, -8);
+		} else {
+			return Collections.emptyList();
+		}
+
+		return marketpriceRepository.findAllByRealmAndFactionAndAndItemIdAndTimestampAfterOrderByTimestamp(
+				realm.toLowerCase().replace(" ", ""),
+				faction.toLowerCase(),
+				itemId,
+				calendar
+		).stream().peek(m -> m.setTimestamp(convertToGmt(m.getTimestamp()))).collect(Collectors.toList());
+    }
 
 	@Cacheable(value="autoComplete", key="{#query + #realm + #faction}")
 	@GetMapping(value = "/api/autocomplete")
@@ -90,6 +178,9 @@ public class SearchController {
 			@RequestParam(name = "realm") String realm,
 			@RequestParam(name = "faction") String faction
 	) {
+		if (!isParametersValid(realm, faction)) {
+			return Collections.emptyList();
+		}
 		SuggestionBuilder suggestionBuilder = SuggestBuilders
 				.completionSuggestion("suggest")
 				.prefix(normalizeQuery(query))
@@ -153,6 +244,9 @@ public class SearchController {
 			@RequestParam(name = "realm") String realm,
 			@RequestParam(name = "faction") String faction
 	) {
+		if (!isParametersValid(realm, faction)) {
+			return 0L;
+		}
 		QueryBuilder queryBuilder = QueryBuilders.matchPhrasePrefixQuery("itemName", normalizeQuery(query).toLowerCase());
 		CountRequest countRequest = new CountRequest();
 		countRequest.indices(String.format("ah_item_%s_%s", realm.toLowerCase(), faction.toLowerCase()));
@@ -200,6 +294,10 @@ public class SearchController {
 			@RequestParam(name = "sortField", required = false) String sortField,
 			@RequestParam(name = "sortFieldOrder", required = false) Integer sortFieldOrder
 	) {
+		if (!isParametersValid(realm, faction)) {
+			return Collections.emptyMap();
+		}
+
 		Instant startQueryTime = Instant.now();
 		QueryBuilder queryBuilder = QueryBuilders.matchPhrasePrefixQuery("itemName", normalizeQuery(query).toLowerCase());
 
@@ -214,6 +312,10 @@ public class SearchController {
 		searchRequest.source(sourceBuilder);
 
 		if (sortField != null && sortFieldOrder != null) {
+			if (!SUPPORTED_FIELDS.contains(sortField.toLowerCase()) && ImmutableList.of(0, 1, 2).contains(sortFieldOrder)) {
+				log.error(String.format("Invalid parameters: %s %s", sortField, sortFieldOrder));
+				return Collections.emptyMap();
+			}
 			addSort(sourceBuilder, sortField, sortFieldOrder);
 		}
 

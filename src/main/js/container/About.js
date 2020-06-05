@@ -26,8 +26,8 @@ class About extends React.Component {
         </div>
           <div style={{margin: 30, flex: 1}}>
             <h4 style={{color: 'turquoise'}}>Goal</h4>
-              The goal of classic-ah.com is to provide a near-realtime auction house viewing experience...
-              from the convenience of your desktop, tablet, or mobile phone.
+              Classic AH is a search engine for auction house data on WoW Classic. The goal of Classic AH is to provide
+            near real-time auction house data from the convenience of your desktop, tablet, or mobile phone.
           </div>
           <div style={{margin: 30, flex: 1}}>
             <h4 style={{color: 'turquoise'}}>Donations</h4>
@@ -47,7 +47,7 @@ class About extends React.Component {
 
           <div style={{margin: 30, flex: 1}}>
             <h4 style={{color: 'turquoise'}}>Issues / Feature Requests</h4>
-            See a bug on the page? Or maybe you want a new feature to be added? You can email us at webm.classic.ah@gmail.com
+            See a bug on the page? Or maybe you want a new feature to be added? Please email your inquiries and requests to webm.classic.ah@gmail.com.
           </div>
 			</Container>
 		)

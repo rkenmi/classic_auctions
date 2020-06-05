@@ -47,6 +47,7 @@
     "history": "^4.10.1",
     "html-webpack-plugin": "^4.2.0",
     "moment": "^2.25.3",
+    "moment-timezone": "^0.5.31",
     "qs": "^6.9.3",
     "react-bootstrap": "^1.0.0",
     "react-burger-menu": "^2.6.13",

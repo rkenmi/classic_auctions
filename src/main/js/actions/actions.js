@@ -12,12 +12,16 @@ export const SET_CURRENT_REALM = 'SET_CURRENT_REALM';
 export const SET_CURRENT_FACTION = 'SET_CURRENT_FACTION';
 export const SET_ERROR = 'SET_ERROR';
 export const TOGGLE_TODO = 'TOGGLE_TODO'
+export const OPEN_GRAPH_MODAL = 'OPEN_GRAPH_MODAL'
+export const HIDE_GRAPH_MODAL = 'HIDE_GRAPH_MODAL'
 export const LOAD_SPINNER = 'LOAD_SPINNER'
+export const LOAD_GRAPH_SPINNER = 'LOAD_GRAPH_SPINNER'
 export const ADD_SORT = 'ADD_SORT';
 export const SET_VISIBILITY_FILTER = 'SET_VISIBILITY_FILTER'
 export const PICK_SUGGESTION_EVENT = 'PICK_SUGGESTION_EVENT'
 export const ENTER_BTN_PRESSED_EVENT = 'ENTER_BTN_PRESSED_EVENT'
 export const UPDATE_SEARCH_RESULTS = 'UPDATE_SEARCH_RESULTS'
+export const UPDATE_GRAPH_DATA = 'UPDATE_GRAPH_DATA'
 export const UPDATE_SEARCH_SUGGESTIONS = 'UPDATE_SEARCH_SUGGESTIONS'
 export const UPDATE_SEARCH_QUERY = 'UPDATE_SEARCH_QUERY'
 export const UPDATE_PAGE_NUM = 'UPDATE_PAGE_NUM'
@@ -87,8 +91,24 @@ export function updateSearchResults(results) {
   return { type: UPDATE_SEARCH_RESULTS, results }
 }
 
+export function updateGraphData(data) {
+  return { type: UPDATE_GRAPH_DATA, data }
+}
+
+export function openGraphModal(itemId) {
+  return { type: OPEN_GRAPH_MODAL, itemId }
+}
+
+export function hideGraphModal() {
+  return { type: HIDE_GRAPH_MODAL }
+}
+
 export function loadSpinner() {
   return { type: LOAD_SPINNER }
+}
+
+export function loadGraphSpinner() {
+  return { type: LOAD_GRAPH_SPINNER }
 }
 
 export function updateSearchSuggestions(suggestions) {
@@ -224,6 +244,28 @@ export function search(pageNum=0, overrideQuery=null, pushHistory=true)  {
   };
 }
 
+export function getMarketpriceData(itemId, timespan=0)  {
+  return function(dispatch, getState) {
+    const {pageReducer} = getState();
+    const {currentRealm, currentFaction, sort} = pageReducer;
+
+    if (!searchIsValid(dispatch, 'IGNORE', currentRealm, currentFaction)) {
+      return;
+    }
+    const formattedRealm = currentRealm.replace(" ", "");
+
+    let r = normalizeParam(formattedRealm),
+      f = normalizeParam(currentFaction)
+    ;
+
+    dispatch(openGraphModal(itemId));
+    return requestMarketpriceData(timespan, r, f, itemId).then(
+      (done) => dispatch(updateGraphData(done.entity)),
+      (error) => dispatch(setError('Graph retrieval failed', error)),
+    );
+  };
+}
+
 export function convertSortParamsToURLParams(sortParams) {
   if (Object.keys(sortParams).length === 0) {
     return '';
@@ -242,6 +284,13 @@ const requestSearch = (p=0, q, r, f, sp) => {
   return client({
     method: 'GET',
     path: '/api/search?q=' + q + '&p=' + p + '&realm=' + r + '&faction=' + f + sp
+  });
+};
+
+const requestMarketpriceData = (timespan=0, r, f, itemId) => {
+  return client({
+    method: 'GET',
+    path: '/api/marketprice?timespan=' + timespan + '&realm=' + r + '&faction=' + f + '&itemId=' + itemId
   });
 };
 

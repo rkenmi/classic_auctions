@@ -18,6 +18,7 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faArrowDown, faArrowUp} from '@fortawesome/free-solid-svg-icons';
 import {SORT_FIELDS, SORT_FIELDS_DISPLAY_NAMES, SORT_ORDERS} from '../../helpers/constants';
 
+const moment = require('moment-timezone');
 const React = require('react');
 
 export default class AuctionTable extends React.Component {
@@ -25,44 +26,83 @@ export default class AuctionTable extends React.Component {
     graph: {}
   };
 
-  onClickGraph = (features) => {
-    this.setState({
-      graph: {
-        show: true,
-        itemId: features.id,
-        itemName: features.itemName
-      }
-    })
+  _formatTick(tick) {
+    return moment(tick).format('MM/DD h:mm a')
+  }
+
+  renderMoney = (money) => {
+    // For items with no buyout price
+    if (money == '0') {
+      return <span style={{border: 0}}/>;
+    }
+
+    return (
+      <span style={{display: 'inline'}}>
+        <span style={{justifyContent: 'flex-end'}}>
+          {money > 9999 ?
+            <span className={'money-gold'}>{Math.floor((money / 10000))}</span>
+            : null}
+          {money > 99 ?
+            <span className={'money-silver'}>{Math.floor((money / 100) % 100)}</span>
+            : null}
+          <span className={'money-copper'}>{Math.floor(money % 100)}</span>
+        </span>
+      </span>
+    )
   };
 
-  _render12HourView() {
+  _render12HourView(prices) {
+    prices = prices.map(p => {
+      return {...p, timestamp: moment(p.timestamp).valueOf()}
+    });
+
+    //domain={[moment().subtract(8, 'hours').format('MMM Do h:mm'), moment().format('MMM Do h:mm')]}
     return (
       <ResponsiveContainer width={'90%'} height={300}>
-        <ComposedChart data={dummyData}
+        <ComposedChart data={prices}
                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="scannedAt" />
-          <YAxis />
-          <Tooltip />
+          <XAxis dataKey="timestamp"
+                 type={'number'}
+                 scale={'time'}
+                 domain={[
+                   moment().subtract(8, 'hours').valueOf(),
+                   moment().valueOf(),
+                 ]}
+                 tickFormatter={this._formatTick}/>
+          <YAxis dataKey="price" />
+          <Tooltip formatter={(value, name, props) => {
+            if (name === 'price') {
+              return this.renderMoney(value)
+            }
+            return value;
+          }}/>
           <Legend />
-          <Bar dataKey="quantity" barSize={Math.max(...dummyData.map((o) => o.quantity))} fill="#413ea0" />
-          <Line type="monotone" dataKey="marketValue" stroke="#ff7300" />
+          <Line type="monotone" dataKey="quantity"/>
+          <Line type="monotone" dataKey="price" stroke="#ff7300" />
         </ComposedChart>
       </ResponsiveContainer>
     )
   }
 
   renderGraphModal() {
-    const {show, itemId, itemName} = this.state.graph;
+    const {itemId, itemName, prices, loading} = this.props.graph;
 
-    const hide = () => {this.setState({graph: {show: false}})};
+    const show = itemId !== null;
+    const hide = () => {this.props.onCloseModal()};
+    const spinner = <Container style={{display: 'flex', justifyContent: 'center'}}>
+      <Spinner variant='info' animation="border" role="status">
+        <span className="sr-only">Loading graph...</span>
+      </Spinner>;
+    </Container>
+
     return (
       <Modal show={show} onHide={hide}>
         <Modal.Header closeButton>
           <Modal.Title><h4 style={{color: '#000'}}>{itemName} (DEMO - Not working)</h4></Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {this._render12HourView()}
+          {loading ? spinner : this._render12HourView(prices)}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="info" onClick={hide}>
@@ -75,13 +115,13 @@ export default class AuctionTable extends React.Component {
 
   getDesktopItems(items) {
     return items.map(features =>
-      <Item key={items.indexOf(features)} index={items.indexOf(features)} features={features} onClickGraph={this.onClickGraph.bind(this, features)}/>
+      <Item key={items.indexOf(features)} index={items.indexOf(features)} features={features} onClickGraph={() => this.props.onClickGraph(features.id)}/>
     );
   }
 
   getMobileItems(items) {
     return items.map(features =>
-      <MobileItem key={items.indexOf(features)} index={items.indexOf(features)} features={features} onClickGraph={this.onClickGraph.bind(this, features)}/>
+      <MobileItem key={items.indexOf(features)} index={items.indexOf(features)} features={features} onClickGraph={() => this.props.onClickGraph(features.id)}/>
     );
   }
 
@@ -110,7 +150,7 @@ export default class AuctionTable extends React.Component {
   render() {
     let {items} = this.props;
 
-    if (this.props.loading) {
+    if (!items || this.props.loading) {
       return (
         <Container style={{flex: 1, display: 'flex', marginTop: 35, justifyContent: 'center'}}>
           <Spinner variant='info' animation="border" role="status">
@@ -227,7 +267,6 @@ const dummyData = [
   },
   {
     "marketValue": 181,
-    "minBuyout": 100,
     "quantity": 511,
     "scannedAt": "2020-05-22T23:43:53.000Z"
   },

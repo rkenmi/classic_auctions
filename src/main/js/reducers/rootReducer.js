@@ -15,7 +15,7 @@ import {
   LOAD_SPINNER,
   MOBILE_NAV_EXPANDED,
   UPDATE_PAGE_NUM,
-  ADD_SORT
+  ADD_SORT, UPDATE_GRAPH_DATA, OPEN_GRAPH_MODAL, HIDE_GRAPH_MODAL
 } from '../actions/actions'
 const { SHOW_ALL } = VisibilityFilters;
 import { connectRouter } from 'connected-react-router'
@@ -36,7 +36,7 @@ function visibilityReducer(state = SHOW_ALL, action) {
 }
 
 function pageReducer(state = {count: 0, suggestions: [], items: [], hasSearched: false, query: '', loading: false,
-  sort: {}, mobileNavExpanded: false}, action)
+  sort: {}, mobileNavExpanded: false, graph: {itemId: null, prices: []}}, action)
 {
   switch (action.type) {
     case SET_REALMS:
@@ -65,6 +65,16 @@ function pageReducer(state = {count: 0, suggestions: [], items: [], hasSearched:
         ...state,
         query: action.query
       };
+    case UPDATE_GRAPH_DATA:
+      const prices = action.data;
+      return {
+        ...state,
+        graph: {
+          ...state.graph,
+          loading: false,
+          prices,
+        },
+      };
     case SET_CURRENT_REALM:
       return {
         ...state,
@@ -92,6 +102,24 @@ function pageReducer(state = {count: 0, suggestions: [], items: [], hasSearched:
       return {
         ...state,
         loading: true,
+      };
+    case OPEN_GRAPH_MODAL:
+      return {
+        ...state,
+        graph: {
+          ...state.graph,
+          loading: true,
+          itemId: action.itemId
+        },
+      };
+    case HIDE_GRAPH_MODAL:
+      return {
+        ...state,
+        graph: {
+          ...state.graph,
+          loading: false,
+          itemId: null,
+        },
       };
     case TOGGLE_TODO:
       return state.map((todo, index) => {
