@@ -1,6 +1,5 @@
 import {TIME_REMAINING} from '../helpers/constants';
 import {getColorCode} from '../helpers/searchHelpers';
-import {Desktop, Mobile} from '../helpers/mediaTypes';
 import Swiper from 'react-id-swiper';
 import 'swiper/css/swiper.css'
 import {Button} from 'react-bootstrap';
@@ -86,17 +85,19 @@ export default class Item extends React.Component{
   renderSlideTwo(metaItem) {
     return (
       <div style={{padding: 10}}>
+        <div style={{display: 'flex', justifyContent: 'flex-end'}}>
+          <span style={{fontWeight: 'bold'}}>{this.renderMoney('Vendor Sell: ', metaItem.sellPrice)}</span>
+        </div>
         <span style={{display: 'flex', justifyContent: 'flex-end'}}>
           Item Type: {metaItem.classType}, {metaItem.subclassType}
         </span>
         <div style={{display: 'flex', justifyContent: 'space-between'}}>
-          <span>Phase: <span style={{fontWeight: 'bold'}}>{metaItem.contentPhase}</span></span>
+          <span>Max Stackable: <span style={{fontWeight: 'bold'}}>{metaItem.maxStack}</span></span>
           <span>Slot: <span style={{fontWeight: 'bold'}}>{metaItem.slot}</span></span>
         </div>
         <div style={{display: 'flex', justifyContent: 'space-between'}}>
           <span>iLvl: <span style={{fontWeight: 'bold'}}>{metaItem.itemLvl}</span></span>
-          <span>Req: <span style={{fontWeight: 'bold'}}>{metaItem.minLvlRequired}</span></span>
-          <span>Vendor Sell Price: <span style={{fontWeight: 'bold'}}>{metaItem.sellPrice}</span></span>
+          <span>Lvl Req: <span style={{fontWeight: 'bold'}}>{metaItem.minLvlRequired}</span></span>
         </div>
       </div>
     )

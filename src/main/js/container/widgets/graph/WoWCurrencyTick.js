@@ -57,7 +57,7 @@ export class WowCurrencyTick extends PureComponent {
 
       return (
         <g>
-          <text x={x} y={y} dx={textOffset} fill='#666' text-anchor="end">
+          <text x={x} y={y} dx={textOffset} fill='#666' textAnchor="end">
             {`${moneySlot.valueTxt}`}
           </text>
           <image href={moneySlot.ico} x={x + imageOffset} y={y-10} height="13px" width="13px" fill="#666" />

@@ -84,7 +84,6 @@ export default class AuctionTable extends React.Component {
                  tickFormatter={formatTick}/>
           <YAxis dataKey="price" width={75} tick={<WowCurrencyTick/>} />
           <Tooltip content={<CustomTooltip item={item}/>} />
-          <Legend />
           <Area type="monotone" dataKey="price" stroke="#8884d8" fillOpacity={1} fill="url(#colorUv)" />
         </ComposedChart>
       </ResponsiveContainer>

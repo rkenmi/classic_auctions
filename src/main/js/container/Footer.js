@@ -13,7 +13,7 @@ const PageLinks = (props) => {
     query: '(min-device-width: 1224px)'
   });
 
-  const footerWidth = isDesktopOrLaptop ? '35%' : '100%';
+  const footerWidth = isDesktopOrLaptop ? '20%' : '50%';
 
   return (
     <div id={'ah-footer'} style={{
@@ -27,7 +27,6 @@ const PageLinks = (props) => {
       <Link to={'/'}>Home</Link>
       <Link to={'/about'}>About</Link>
       <Link to={'/privacy'}>Privacy Policy</Link>
-      <Link to={'/tos'}>Terms of Service</Link>
     </div>
   )
 };

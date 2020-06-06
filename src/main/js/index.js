@@ -11,22 +11,25 @@ import {history} from './createStore';
 import PrivacyPolicy from './container/PrivacyPolicy';
 import About from './container/About';
 import Footer from './container/Footer';
+import ScrollToTop from './scrollToTop'
 
 const store = configureStore();
 ReactDOM.render(
   <Provider store={store}>
       <ConnectedRouter history={history}>
-        <div style={{position: 'relative', minHeight: '85vh'}}>
-          <Switch>
-            <Route path="/search" exact component={AuctionHouseWrapper} />
-            <Route path="/" exact component={Home} />
-            <Route path="/privacy" exact component={PrivacyPolicy} />
-            <Route path="/about" exact component={About} />
-            {/*Fallback route*/}
-            <Route component={Error} />
-          </Switch>
-          <Route component={Footer}/>
-        </div>
+        <ScrollToTop>
+          <div style={{position: 'relative', minHeight: '85vh'}}>
+            <Switch>
+              <Route path="/search" exact component={AuctionHouseWrapper} />
+              <Route path="/" exact component={Home} />
+              <Route path="/privacy" exact component={PrivacyPolicy} />
+              <Route path="/about" exact component={About} />
+              {/*Fallback route*/}
+              <Route component={Error} />
+            </Switch>
+            <Route component={Footer}/>
+          </div>
+        </ScrollToTop>
       </ConnectedRouter>
   </Provider>,
   document.getElementById('react')
