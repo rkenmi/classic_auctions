@@ -158,7 +158,7 @@ public class SearchController {
 		} else if (timespan== 1) {
 			calendar.add(Calendar.WEEK_OF_MONTH, -1);
 		} else if (timespan == 0) {
-			calendar.add(Calendar.HOUR_OF_DAY, -8);
+			calendar.add(Calendar.HOUR_OF_DAY, -12);
 		} else {
 			return Collections.emptyList();
 		}
@@ -168,7 +168,9 @@ public class SearchController {
 				faction.toLowerCase(),
 				itemId,
 				calendar
-		).stream().peek(m -> m.setTimestamp(convertToGmt(m.getTimestamp()))).collect(Collectors.toList());
+		).stream()
+				.filter(m -> m.getPrice() > 0)  // skip items w/o buyout
+				.peek(m -> m.setTimestamp(convertToGmt(m.getTimestamp()))).collect(Collectors.toList());
     }
 
 	@Cacheable(value="autoComplete", key="{#query + #realm + #faction}")

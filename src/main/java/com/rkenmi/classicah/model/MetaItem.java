@@ -20,6 +20,7 @@ public class MetaItem implements Serializable {
     private String slot;
     private Integer itemLvl;
     private Integer minLvlRequired;
+    private Integer maxStack;
     private String quality;
     private String classType;
     private String subclassType;

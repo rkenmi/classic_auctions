@@ -25,7 +25,7 @@ import {
   loadFromURL,
   searchOnSetRealmAndFaction,
   searchOnSetSort,
-  convertSortParamsToURLParams, getMarketpriceData, hideGraphModal
+  convertSortParamsToURLParams, getMarketpriceData, hideGraphModal, setTimespan
 } from '../actions/actions';
 import AHSearchForm from './AuctionHouseSearch';
 import moment from 'moment';
@@ -37,7 +37,6 @@ import {Logo} from '../helpers/domHelpers';
 import {SORT_FIELDS, SORT_FIELDS_DISPLAY_NAMES, SORT_ORDERS} from '../helpers/constants';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faArrowDown, faArrowUp} from '@fortawesome/free-solid-svg-icons';
-import Footer from './Footer';
 import AuctionPagination from './widgets/AuctionPagination';
 const ALLIANCE_ICON = MISC_URL + 'alliance_50.png';
 const HORDE_ICON = MISC_URL + 'horde_50.png';
@@ -290,6 +289,7 @@ class AuctionHouse extends React.Component{
           page={page}
           hasSearched={this.props.hasSearched}
           items={items}
+          onSetTimespan={this.props.onSetTimespan}
           graph={graph}
           onClickGraph={this.props.clickGraph}
           onCloseModal={this.props.hideGraph}
@@ -338,8 +338,8 @@ function mapDispatchToProps(dispatch) {
     searchOnSort: (field, order) => {
       dispatch(searchOnSetSort(field, order));
     },
-    clickGraph: (itemId, timestamp) => {
-      dispatch(getMarketpriceData(itemId, 0));
+    clickGraph: (item, timestamp) => {
+      dispatch(getMarketpriceData(item, 0));
     },
     hideGraph: () => {
       dispatch(hideGraphModal());
@@ -367,6 +367,9 @@ function mapDispatchToProps(dispatch) {
     },
     setMobileNavExpanded: (expanded) => {
       dispatch(setMobileNavExpanded(expanded))
+    },
+    onSetTimespan: (timespan) => {
+      dispatch(setTimespan(timespan));
     },
     setError: (title, message) => {
       dispatch(setError(title, message));

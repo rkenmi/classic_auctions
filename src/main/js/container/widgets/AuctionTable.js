@@ -1,8 +1,19 @@
-import {Button, Dropdown, ButtonGroup, Container, DropdownButton, Modal, Spinner, Table} from 'react-bootstrap';
+import {
+  Button,
+  Dropdown,
+  ButtonGroup,
+  Container,
+  DropdownButton,
+  Modal,
+  Spinner,
+  Table,
+  ToggleButton
+} from 'react-bootstrap';
 import Item from '../Item';
 import MobileItem from '../MobileItem';
 import {Desktop, Mobile, Tablet} from '../../helpers/mediaTypes';
 import {
+  Area,
   Bar,
   CartesianGrid,
   ComposedChart,
@@ -17,92 +28,104 @@ import {
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faArrowDown, faArrowUp} from '@fortawesome/free-solid-svg-icons';
 import {SORT_FIELDS, SORT_FIELDS_DISPLAY_NAMES, SORT_ORDERS} from '../../helpers/constants';
-
+import {CustomTooltip} from './graph/GraphTooltip';
+import {WowCurrencyTick} from './graph/WoWCurrencyTick';
+import {CustomizedAxisTick} from './graph/TimeAxisTick';
 const moment = require('moment-timezone');
 const React = require('react');
 
+const formatTick = (tick) => moment(tick).format('MM/DD h:mm a');
+
+const TIMESPAN_RADIOS = [
+  { name: '12 Hr', value: 0 },
+  { name: '1 Wk', value: 1 },
+  { name: '1 Mo', value: 2 },
+];
+
 export default class AuctionTable extends React.Component {
-  state = {
-    graph: {}
-  };
-
-  _formatTick(tick) {
-    return moment(tick).format('MM/DD h:mm a')
-  }
-
-  renderMoney = (money) => {
-    // For items with no buyout price
-    if (money == '0') {
-      return <span style={{border: 0}}/>;
-    }
-
-    return (
-      <span style={{display: 'inline'}}>
-        <span style={{justifyContent: 'flex-end'}}>
-          {money > 9999 ?
-            <span className={'money-gold'}>{Math.floor((money / 10000))}</span>
-            : null}
-          {money > 99 ?
-            <span className={'money-silver'}>{Math.floor((money / 100) % 100)}</span>
-            : null}
-          <span className={'money-copper'}>{Math.floor(money % 100)}</span>
-        </span>
-      </span>
-    )
-  };
-
-  _render12HourView(prices) {
+  _renderGraphComponent(prices, item, timespan) {
     prices = prices.map(p => {
       return {...p, timestamp: moment(p.timestamp).valueOf()}
     });
 
-    //domain={[moment().subtract(8, 'hours').format('MMM Do h:mm'), moment().format('MMM Do h:mm')]}
+    let startDate;
+    if (timespan === 2) {
+      startDate = moment().subtract(1, 'month').valueOf();
+    } else if (timespan === 1) {
+      startDate = moment().subtract(1, 'week').valueOf();
+    } else {
+      startDate = moment().subtract(12, 'hours').valueOf();
+    }
+
     return (
       <ResponsiveContainer width={'90%'} height={300}>
         <ComposedChart data={prices}
                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />
+          <defs>
+            <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
+            </linearGradient>
+            <linearGradient id="colorPv" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="#82ca9d" stopOpacity={0}/>
+            </linearGradient>
+          </defs>
           <XAxis dataKey="timestamp"
                  type={'number'}
                  scale={'time'}
+                 height={60}
+                 tick={<CustomizedAxisTick/>}
                  domain={[
-                   moment().subtract(8, 'hours').valueOf(),
+                   startDate,
                    moment().valueOf(),
                  ]}
-                 tickFormatter={this._formatTick}/>
-          <YAxis dataKey="price" />
-          <Tooltip formatter={(value, name, props) => {
-            if (name === 'price') {
-              return this.renderMoney(value)
-            }
-            return value;
-          }}/>
+                 tickFormatter={formatTick}/>
+          <YAxis dataKey="price" width={75} tick={<WowCurrencyTick/>} />
+          <Tooltip content={<CustomTooltip item={item}/>} />
           <Legend />
-          <Line type="monotone" dataKey="quantity"/>
-          <Line type="monotone" dataKey="price" stroke="#ff7300" />
+          <Area type="monotone" dataKey="price" stroke="#8884d8" fillOpacity={1} fill="url(#colorUv)" />
         </ComposedChart>
       </ResponsiveContainer>
     )
   }
 
   renderGraphModal() {
-    const {itemId, itemName, prices, loading} = this.props.graph;
+    const {item, prices, loading, timespan} = this.props.graph;
 
-    const show = itemId !== null;
+    const show = item !== null;
     const hide = () => {this.props.onCloseModal()};
     const spinner = <Container style={{display: 'flex', justifyContent: 'center'}}>
       <Spinner variant='info' animation="border" role="status">
         <span className="sr-only">Loading graph...</span>
-      </Spinner>;
-    </Container>
+      </Spinner>
+    </Container>;
 
     return (
       <Modal show={show} onHide={hide}>
         <Modal.Header closeButton>
-          <Modal.Title><h4 style={{color: '#000'}}>{itemName} (DEMO - Not working)</h4></Modal.Title>
+          <Modal.Title><h4 style={{color: '#000'}}>{item ? item.itemName : null}</h4></Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {loading ? spinner : this._render12HourView(prices)}
+          <div style={{display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+            <ButtonGroup toggle style={{flex: 1, marginBottom: 15}}>
+              {TIMESPAN_RADIOS.map((radio, idx) => (
+                <ToggleButton
+                  key={idx}
+                  type="radio"
+                  variant="info"
+                  name="radio"
+                  value={radio.value}
+                  checked={timespan === radio.value}
+                  onChange={(e) => this.props.onSetTimespan(parseInt(e.currentTarget.value))}
+                >
+                  {radio.name}
+                </ToggleButton>
+              ))}
+            </ButtonGroup>
+          </div>
+          {loading ? spinner : this._renderGraphComponent(prices, item, timespan)}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="info" onClick={hide}>
@@ -115,13 +138,13 @@ export default class AuctionTable extends React.Component {
 
   getDesktopItems(items) {
     return items.map(features =>
-      <Item key={items.indexOf(features)} index={items.indexOf(features)} features={features} onClickGraph={() => this.props.onClickGraph(features.id)}/>
+      <Item key={items.indexOf(features)} index={items.indexOf(features)} features={features} onClickGraph={() => this.props.onClickGraph(features)}/>
     );
   }
 
   getMobileItems(items) {
     return items.map(features =>
-      <MobileItem key={items.indexOf(features)} index={items.indexOf(features)} features={features} onClickGraph={() => this.props.onClickGraph(features.id)}/>
+      <MobileItem key={items.indexOf(features)} index={items.indexOf(features)} features={features} onClickGraph={() => this.props.onClickGraph(features)}/>
     );
   }
 
@@ -246,64 +269,3 @@ export default class AuctionTable extends React.Component {
   }
 }
 
-const dummyData = [
-  {
-    "marketValue": 320,
-    "minBuyout": 320,
-    "quantity": 149,
-    "scannedAt": "2020-05-22T17:54:13.000Z"
-  },
-  {
-    "marketValue": 313,
-    "minBuyout": 308,
-    "quantity": 180,
-    "scannedAt": "2020-05-22T18:43:22.000Z"
-  },
-  {
-    "marketValue": 232,
-    "minBuyout": 223,
-    "quantity": 433,
-    "scannedAt": "2020-05-22T21:06:34.000Z"
-  },
-  {
-    "marketValue": 181,
-    "quantity": 511,
-    "scannedAt": "2020-05-22T23:43:53.000Z"
-  },
-  {
-    "marketValue": 89,
-    "minBuyout": 75,
-    "quantity": 793,
-    "scannedAt": "2020-05-23T02:49:12.000Z"
-  },
-  {
-    "marketValue": 90,
-    "minBuyout": 65,
-    "quantity": 778,
-    "scannedAt": "2020-05-23T05:13:29.000Z"
-  },
-  {
-    "marketValue": 92,
-    "minBuyout": 60,
-    "quantity": 718,
-    "scannedAt": "2020-05-23T08:40:43.000Z"
-  },
-  {
-    "marketValue": 148,
-    "minBuyout": 64,
-    "quantity": 538,
-    "scannedAt": "2020-05-23T13:20:35.000Z"
-  },
-  {
-    "marketValue": 71,
-    "minBuyout": 63,
-    "quantity": 660,
-    "scannedAt": "2020-05-23T16:10:15.000Z"
-  },
-  {
-    "marketValue": 71,
-    "minBuyout": 63,
-    "quantity": 759,
-    "scannedAt": "2020-05-23T17:44:21.000Z"
-  }
-];

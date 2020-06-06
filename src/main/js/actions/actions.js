@@ -14,6 +14,7 @@ export const SET_ERROR = 'SET_ERROR';
 export const TOGGLE_TODO = 'TOGGLE_TODO'
 export const OPEN_GRAPH_MODAL = 'OPEN_GRAPH_MODAL'
 export const HIDE_GRAPH_MODAL = 'HIDE_GRAPH_MODAL'
+export const SET_TIMESPAN = 'SET_TIMESPAN'
 export const LOAD_SPINNER = 'LOAD_SPINNER'
 export const LOAD_GRAPH_SPINNER = 'LOAD_GRAPH_SPINNER'
 export const ADD_SORT = 'ADD_SORT';
@@ -51,6 +52,10 @@ export function setCurrentRealm(currentRealm) {
 
 export function setCurrentFaction(currentFaction) {
   return { type: SET_CURRENT_FACTION, currentFaction }
+}
+
+export function setTimespan(timespan) {
+  return { type: SET_TIMESPAN, timespan }
 }
 
 export function setError(title, message) {
@@ -95,8 +100,8 @@ export function updateGraphData(data) {
   return { type: UPDATE_GRAPH_DATA, data }
 }
 
-export function openGraphModal(itemId) {
-  return { type: OPEN_GRAPH_MODAL, itemId }
+export function openGraphModal(item) {
+  return { type: OPEN_GRAPH_MODAL, item }
 }
 
 export function hideGraphModal() {
@@ -244,7 +249,7 @@ export function search(pageNum=0, overrideQuery=null, pushHistory=true)  {
   };
 }
 
-export function getMarketpriceData(itemId, timespan=0)  {
+export function getMarketpriceData(item, timespan=0)  {
   return function(dispatch, getState) {
     const {pageReducer} = getState();
     const {currentRealm, currentFaction, sort} = pageReducer;
@@ -258,8 +263,8 @@ export function getMarketpriceData(itemId, timespan=0)  {
       f = normalizeParam(currentFaction)
     ;
 
-    dispatch(openGraphModal(itemId));
-    return requestMarketpriceData(timespan, r, f, itemId).then(
+    dispatch(openGraphModal(item));
+    return requestMarketpriceData(timespan, r, f, item.id).then(
       (done) => dispatch(updateGraphData(done.entity)),
       (error) => dispatch(setError('Graph retrieval failed', error)),
     );
