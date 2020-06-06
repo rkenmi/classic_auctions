@@ -25,7 +25,7 @@ import {
   loadFromURL,
   searchOnSetRealmAndFaction,
   searchOnSetSort,
-  convertSortParamsToURLParams, getMarketpriceData, hideGraphModal, setTimespan
+  convertSortParamsToURLParams, getMarketpriceData, hideGraphModal, setTimespan, setTimespanOnGraph
 } from '../actions/actions';
 import AHSearchForm from './AuctionHouseSearch';
 import moment from 'moment';
@@ -368,8 +368,8 @@ function mapDispatchToProps(dispatch) {
     setMobileNavExpanded: (expanded) => {
       dispatch(setMobileNavExpanded(expanded))
     },
-    onSetTimespan: (timespan) => {
-      dispatch(setTimespan(timespan));
+    onSetTimespan: (timespan, item) => {
+      dispatch(setTimespanOnGraph(timespan, item));
     },
     setError: (title, message) => {
       dispatch(setError(title, message));

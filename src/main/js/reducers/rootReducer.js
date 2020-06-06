@@ -127,6 +127,7 @@ function pageReducer(state = {count: 0, suggestions: [], items: [], hasSearched:
         ...state,
         graph: {
           ...state.graph,
+          loading: true,
           timespan: action.timespan
         },
       };

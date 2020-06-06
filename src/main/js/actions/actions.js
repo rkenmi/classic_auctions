@@ -249,6 +249,28 @@ export function search(pageNum=0, overrideQuery=null, pushHistory=true)  {
   };
 }
 
+export function setTimespanOnGraph(timespan, item) {
+  return function(dispatch, getState) {
+    const {pageReducer} = getState();
+    const {currentRealm, currentFaction, sort} = pageReducer;
+
+    if (!searchIsValid(dispatch, 'IGNORE', currentRealm, currentFaction)) {
+      return;
+    }
+    const formattedRealm = currentRealm.replace(" ", "");
+
+    let r = normalizeParam(formattedRealm),
+      f = normalizeParam(currentFaction)
+    ;
+
+    dispatch(setTimespan(timespan));
+    return requestMarketpriceData(timespan, r, f, item.id).then(
+      (done) => dispatch(updateGraphData(done.entity)),
+      (error) => dispatch(setError('Graph retrieval failed', error)),
+    );
+  };
+}
+
 export function getMarketpriceData(item, timespan=0)  {
   return function(dispatch, getState) {
     const {pageReducer} = getState();

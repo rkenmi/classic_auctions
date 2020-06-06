@@ -76,7 +76,7 @@ export default class AuctionTable extends React.Component {
                  type={'number'}
                  scale={'time'}
                  height={60}
-                 tick={<CustomizedAxisTick/>}
+                 tick={<CustomizedAxisTick timespan={timespan}/>}
                  domain={[
                    startDate,
                    moment().valueOf(),
@@ -117,7 +117,7 @@ export default class AuctionTable extends React.Component {
                   name="radio"
                   value={radio.value}
                   checked={timespan === radio.value}
-                  onChange={(e) => this.props.onSetTimespan(parseInt(e.currentTarget.value))}
+                  onChange={(e) => this.props.onSetTimespan(parseInt(e.currentTarget.value), item)}
                 >
                   {radio.name}
                 </ToggleButton>
