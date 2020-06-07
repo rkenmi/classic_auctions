@@ -101,10 +101,28 @@ export default class AuctionTable extends React.Component {
       </Spinner>
     </Container>;
 
+    if (!item) {
+      return null;
+    }
+
+    const {metaItem, id} = item;
+    const imgHref = 'https://render-classic-us.worldofwarcraft.com/icons/56/' + metaItem.icon + '.jpg';
+
     return (
       <Modal show={show} onHide={hide}>
         <Modal.Header closeButton>
-          <Modal.Title><h4 style={{color: '#000'}}>{item ? item.itemName : null}</h4></Modal.Title>
+          <Modal.Title><h4>
+          <a style={{color: '#000'}} href={'https://classicdb.ch/?item=' + id} target={'_blank'} data-wowhead={'item=' + id + '&domain=classic'}>
+            <span className={'table-row-search-icon'}
+                  style={{display: 'flex', justifyContent: 'space-between', backgroundImage: 'url("'+imgHref+'")'}}>
+              <span style={{display: 'flex'}}>
+                <span style={{marginLeft: 50, display: 'flex', alignItems: 'center'}}>
+                    {item ? item.itemName : null}
+                </span>
+              </span>
+            </span>
+          </a>
+          </h4></Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <div style={{display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center'}}>
