@@ -17,7 +17,9 @@ package com.rkenmi.classicah.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * @author Rick Miyamoto
@@ -30,8 +32,35 @@ public class HomeController {
 
 	}
 
-	@RequestMapping(value = {"/", "/search"})
-	public String index() {
+	@RequestMapping(value = {"/"})
+	public String index(Model model) {
+		model.addAttribute("title", ": Home");
+		return "index";
+	}
+
+	@RequestMapping(value = {"/about"})
+	public String about(Model model) {
+		model.addAttribute("title", ": About");
+		return "index";
+	}
+
+	@RequestMapping(value = {"/privacy"})
+	public String privacyPolicy(Model model) {
+		model.addAttribute("title", ": Privacy Policy");
+		return "index";
+	}
+
+	@RequestMapping(value = {"/search"})
+	public String search(
+			@RequestParam("q") String query,
+			@RequestParam(name = "p", defaultValue = "0") Integer page,
+			@RequestParam(name = "realm") String realm,
+			@RequestParam(name = "faction") String faction,
+			@RequestParam(name = "pS", defaultValue = "15") Integer pageSize,
+			@RequestParam(name = "sortField", required = false) String sortField,
+			@RequestParam(name = "sortFieldOrder", required = false) Integer sortFieldOrder,
+			Model model) {
+		model.addAttribute("title", String.format(": %s - %s - %s", query, realm, faction));
 		return "index";
 	}
 }
