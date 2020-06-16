@@ -8,10 +8,10 @@ public class SupportedRealms {
     public static final List<String> US_WEST = ImmutableList.of(
             "Bigglesworth",
             "Anathema",
-            "Arcanite Reaper",
+            "ArcaniteReaper",
             "Azuresong",
             "Kurinnaxx",
-            "Old Blanchy",
+            "OldBlanchy",
             "Smolderweb",
             "Thunderfury",
             "Rattlegore",
