@@ -15,8 +15,6 @@
  */
 package com.rkenmi.classicah.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -24,7 +22,8 @@ import com.google.common.collect.ImmutableSet;
 import com.rkenmi.classicah.document.Item;
 import com.rkenmi.classicah.model.Marketprice;
 import com.rkenmi.classicah.model.MetaItem;
-import com.rkenmi.classicah.repositories.MarketpriceRepository;
+import com.rkenmi.classicah.repositories.DailyMarketpriceRepository;
+import com.rkenmi.classicah.repositories.HourlyMarketpriceRepository;
 import com.rkenmi.classicah.service.MetaItemService;
 import lombok.extern.log4j.Log4j2;
 import org.elasticsearch.ElasticsearchStatusException;
@@ -56,10 +55,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -85,7 +80,8 @@ public class SearchController {
     private RestHighLevelClient client;
     private ObjectMapper objectMapper = new ObjectMapper();
     private MetaItemService metaItemService;
-    private MarketpriceRepository marketpriceRepository;
+    private HourlyMarketpriceRepository hourlyMarketpriceRepository;
+    private DailyMarketpriceRepository dailyMarketpriceRepository;
 
     private final static Set<String> SUPPORTED_FACTIONS = ImmutableSet.of("horde", "alliance");
 	private final static Set<String> SUPPORTED_REALMS = new HashSet<>(
@@ -96,10 +92,13 @@ public class SearchController {
 	);
 
 	@Autowired
-    public SearchController(RestHighLevelClient client, MetaItemService metaItemService, MarketpriceRepository marketpriceRepository) {
+    public SearchController(RestHighLevelClient client, MetaItemService metaItemService,
+							DailyMarketpriceRepository dailyMarketpriceRepository,
+							HourlyMarketpriceRepository hourlyMarketpriceRepository) {
     	this.client = client;
     	this.metaItemService = metaItemService;
-		this.marketpriceRepository = marketpriceRepository;
+		this.hourlyMarketpriceRepository = hourlyMarketpriceRepository;
+		this.dailyMarketpriceRepository = dailyMarketpriceRepository;
 	}
 
 	private String normalizeQuery(final String q) {
@@ -152,23 +151,37 @@ public class SearchController {
 
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTimeZone(TimeZone.getTimeZone("UTC"));
-
+		List<Marketprice> prices;
 		if (timespan == 2) {
 			calendar.add(Calendar.MONTH, -1);
+			prices = new ArrayList<>(dailyMarketpriceRepository.findAllByRealmAndFactionAndAndItemIdAndTimestampAfterOrderByTimestamp(
+					realm.toLowerCase().replace(" ", ""),
+					faction.toLowerCase(),
+					itemId,
+					calendar
+			)).stream().map(Marketprice::getMarketprice).collect(Collectors.toList());
 		} else if (timespan== 1) {
 			calendar.add(Calendar.WEEK_OF_MONTH, -1);
+			prices = new ArrayList<>(dailyMarketpriceRepository.findAllByRealmAndFactionAndAndItemIdAndTimestampAfterOrderByTimestamp(
+					realm.toLowerCase().replace(" ", ""),
+					faction.toLowerCase(),
+					itemId,
+					calendar
+			)).stream().map(Marketprice::getMarketprice).collect(Collectors.toList());
 		} else if (timespan == 0) {
 			calendar.add(Calendar.HOUR_OF_DAY, -12);
+			prices = new ArrayList<>(hourlyMarketpriceRepository.findAllByRealmAndFactionAndAndItemIdAndTimestampAfterOrderByTimestamp(
+					realm.toLowerCase().replace(" ", ""),
+					faction.toLowerCase(),
+					itemId,
+					calendar
+			)).stream().map(Marketprice::getMarketprice).collect(Collectors.toList());
 		} else {
 			return Collections.emptyList();
 		}
 
-		return marketpriceRepository.findAllByRealmAndFactionAndAndItemIdAndTimestampAfterOrderByTimestamp(
-				realm.toLowerCase().replace(" ", ""),
-				faction.toLowerCase(),
-				itemId,
-				calendar
-		).stream()
+		return prices
+				.stream()
 				.filter(m -> m.getPrice() > 0)  // skip items w/o buyout
 				.peek(m -> m.setTimestamp(convertToGmt(m.getTimestamp()))).collect(Collectors.toList());
     }

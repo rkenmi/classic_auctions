@@ -1,6 +1,12 @@
 # Classic Auctions
 An app that serves near real-time auctions with in-game Auctioneer data.
 
+## The front-end has moved to a different package!
+The front-end of this project has been moved to a separate repository in conjunction with the Gatsby framework to allow for SEO and SSR-generated front-end. 
+This means that this project is now responsible only for **API**.
+
+As a result, the `HomeContoller` and Thyme templates will soon be removed.
+
 ## Early stage diagram
 ![diag](src/main/ClassicAH.png)
 
