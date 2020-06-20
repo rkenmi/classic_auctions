@@ -152,16 +152,12 @@ public class SearchController {
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTimeZone(TimeZone.getTimeZone("UTC"));
 		List<Marketprice> prices;
-		if (timespan == 2) {
-			calendar.add(Calendar.MONTH, -1);
-			prices = new ArrayList<>(dailyMarketpriceRepository.findAllByRealmAndFactionAndAndItemIdAndTimestampAfterOrderByTimestamp(
-					realm.toLowerCase().replace(" ", ""),
-					faction.toLowerCase(),
-					itemId,
-					calendar
-			)).stream().map(Marketprice::getMarketprice).collect(Collectors.toList());
-		} else if (timespan== 1) {
-			calendar.add(Calendar.WEEK_OF_MONTH, -1);
+		if (timespan == 2 || timespan == 1) {
+			if (timespan == 2) {
+				calendar.add(Calendar.MONTH, -1);
+			} else {
+				calendar.add(Calendar.WEEK_OF_MONTH, -1);
+			}
 			prices = new ArrayList<>(dailyMarketpriceRepository.findAllByRealmAndFactionAndAndItemIdAndTimestampAfterOrderByTimestamp(
 					realm.toLowerCase().replace(" ", ""),
 					faction.toLowerCase(),
@@ -298,14 +294,14 @@ public class SearchController {
         sourceBuilder.sort(fieldSortBuilder);
 	}
 
-    @Cacheable(value="popularQueries", key="{#query + #page + #realm + #faction + #pageSize + #sortField + #sortFieldOrder}")
+    @Cacheable(value="popularQueries", key="{#query + #page + #realm + #faction + #exact + #sortField + #sortFieldOrder}")
 	@GetMapping(value = "/api/search")
     public Map<String, Object> searchData(
     		@RequestParam("q") String query,
 			@RequestParam(name = "p", defaultValue = "0") Integer page,
 			@RequestParam(name = "realm") String realm,
 			@RequestParam(name = "faction") String faction,
-			@RequestParam(name = "pS", defaultValue = "15") Integer pageSize,
+			@RequestParam(name = "exact", defaultValue = "false") boolean exact,
 			@RequestParam(name = "sortField", required = false) String sortField,
 			@RequestParam(name = "sortFieldOrder", required = false) Integer sortFieldOrder
 	) {
@@ -314,13 +310,21 @@ public class SearchController {
 		}
 
 		Instant startQueryTime = Instant.now();
-		QueryBuilder queryBuilder = QueryBuilders.matchPhrasePrefixQuery("itemName", normalizeQuery(query).toLowerCase());
+		QueryBuilder queryBuilder;
 
 		SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-		sourceBuilder.query(queryBuilder);
-		sourceBuilder.from(page * pageSize);  // each page has 15 results on the front-end
-		sourceBuilder.size(pageSize);
+		sourceBuilder.from(page * 15);  // each page has 15 results on the front-end.
+		sourceBuilder.size(15);
 		sourceBuilder.timeout(new TimeValue(30, TimeUnit.SECONDS));
+
+		if (exact) {
+			queryBuilder = QueryBuilders.matchPhraseQuery("itemName", normalizeQuery(query).toLowerCase());
+			sourceBuilder.size(1000);
+		} else {
+			queryBuilder = QueryBuilders.matchPhrasePrefixQuery("itemName", normalizeQuery(query).toLowerCase());
+		}
+
+		sourceBuilder.query(queryBuilder);
 
 		SearchRequest searchRequest = new SearchRequest();
 		searchRequest.indices(String.format("ah_item_%s_%s", realm.toLowerCase(), faction.toLowerCase()));
@@ -342,9 +346,15 @@ public class SearchController {
 			log.debug("Status of search: {}", searchResponse.status());
 			SearchHit[] searchHits = searchResponse.getHits().getHits();
 			if (searchHits.length > 0) {
-				count = getCount(query, realm, faction) - searchHits.length - (page * pageSize);
+				count = getCount(query, realm, faction) - searchHits.length - (page * 15);
 				Arrays.stream(searchHits)
 						.map(hit -> objectMapper.convertValue(hit.getSourceAsMap(), Item.class))
+						.filter(item -> {
+							if (exact) {
+								return item.getItemName().equals(normalizeQuery(query));
+							}
+							return true;
+						})
 						.forEach(item -> {
 							MetaItem metaItem = metaItemService.getItem(item.getId());
 							item.setMetaItem(metaItem);
